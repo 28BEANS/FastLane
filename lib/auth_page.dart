@@ -28,6 +28,10 @@ class _AuthPageState extends State<AuthPage> {
 
   bool _isLogin = true;
   bool _loading = false;
+  
+  // NEW STATE: Toggle visibility for password fields
+  bool _isPasswordVisible = false; 
+  bool _isConfirmPasswordVisible = false; 
 
   void _toggleForm() {
     setState(() {
@@ -39,6 +43,9 @@ class _AuthPageState extends State<AuthPage> {
       _firstNameController.clear();
       _lastNameController.clear();
       _middleNameController.clear();
+      // Reset password visibility toggles
+      _isPasswordVisible = false;
+      _isConfirmPasswordVisible = false;
     });
   }
 
@@ -127,13 +134,13 @@ Widget build(BuildContext context) {
             constraints: BoxConstraints(
               minHeight: constraints.maxHeight, // Min height is the full available screen height
             ),
-            child: Center( // <-- 1. HORIZONTAL CENTERING
+            child: Center( // <-- HORIZONTAL CENTERING
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  // 2. VERTICAL CENTERING
+                  // VERTICAL CENTERING
                   mainAxisAlignment: MainAxisAlignment.center, 
-                  // 3. EXPLICIT HORIZONTAL CENTERING of children within the Column
+                  // EXPLICIT HORIZONTAL CENTERING of children within the Column
                   crossAxisAlignment: CrossAxisAlignment.center, 
                   children: [
                     if (!_isLogin) ...[
@@ -177,24 +184,51 @@ Widget build(BuildContext context) {
                     ),
                     const SizedBox(height: 10),
 
+                    // ** PASSWORD TEXT FIELD WITH TOGGLE **
                     Container( 
                       width: _inputWidth,
                       child: TextField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Password'),
-                        obscureText: true,
+                        // Toggle logic
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
 
                     if (!_isLogin) 
-                      // Confirm Password (Only for Registration)
+                      // ** CONFIRM PASSWORD TEXT FIELD WITH TOGGLE **
                       Container( 
                         width: _inputWidth,
                         child: TextField(
                           controller: _confirmPasswordController,
-                          decoration: const InputDecoration(labelText: 'Confirm Password'),
-                          obscureText: true,
+                          // Toggle logic
+                          obscureText: !_isConfirmPasswordVisible,
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                       ),
 
