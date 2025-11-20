@@ -34,8 +34,11 @@ class _AuthPageState extends State<AuthPage> {
   final TextEditingController _middleNameController = TextEditingController();
 
   // State Management
-  AuthMode _authMode = AuthMode.login; // Default mode is Login
+  AuthMode _authMode = AuthMode.login; 
   bool _loading = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
 
   @override
   void dispose() {
@@ -66,6 +69,8 @@ class _AuthPageState extends State<AuthPage> {
       } else {
         _authMode = AuthMode.login;
       }
+      _isPasswordVisible = false;
+      _isConfirmPasswordVisible = false;
       _clearControllers();
     });
   }
@@ -264,8 +269,18 @@ class _AuthPageState extends State<AuthPage> {
                           controller: _passwordController,
                           labelText: 'Password',
                           icon: Icons.lock_outline,
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           textInputAction: (_authMode == AuthMode.login) ? TextInputAction.done : TextInputAction.next,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility_off_outlined : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
                         ),
                       
                       if (_authMode == AuthMode.register)
@@ -366,6 +381,7 @@ class _AuthPageState extends State<AuthPage> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     TextInputAction textInputAction = TextInputAction.done,
+    Widget? suffixIcon,
   }) {
     return Container(
       width: _inputWidth,
@@ -377,6 +393,7 @@ class _AuthPageState extends State<AuthPage> {
         decoration: InputDecoration(
           labelText: labelText,
           prefixIcon: Icon(icon, color: Theme.of(context).hintColor),
+          suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
