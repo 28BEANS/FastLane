@@ -107,6 +107,23 @@ class _AuthPageState extends State<AuthPage> {
     return null; // Password is valid
   }
 
+  /// Validates required registration fields (First Name, Last Name, Email).
+  /// Returns a String containing the error message, or null if validation passes.
+  String? _validateRegistrationFields() {
+    if (_authMode == AuthMode.register) {
+      if (_firstNameController.text.trim().isEmpty) {
+        return 'First Name is required.';
+      }
+      if (_lastNameController.text.trim().isEmpty) {
+        return 'Last Name is required.';
+      }
+      if (_emailController.text.trim().isEmpty) {
+        return 'Email is required.';
+      }
+    }
+    return null;
+  }
+
 
   Future<void> _submit() async {
     if (_loading) return;
@@ -131,12 +148,18 @@ class _AuthPageState extends State<AuthPage> {
       } else if (_authMode == AuthMode.register) {
         // --- REGISTER: Call service function ---
 
-        // 1. Password Match Check
+        // 1. Required Field Check
+        String? fieldValidationError = _validateRegistrationFields();
+        if (fieldValidationError != null) {
+          throw Exception(fieldValidationError);
+        }
+
+        // 2. Password Match Check
         if (password != _confirmPasswordController.text.trim()) {
           throw Exception('Passwords do not match.');
         }
 
-        // 2. Password Criteria Check
+        // 3. Password Criteria Check
         String? validationError = _validatePassword(password);
         if (validationError != null) {
           throw Exception(validationError);
