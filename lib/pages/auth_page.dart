@@ -85,6 +85,45 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
+  /// Validates the password against predefined security criteria.
+  /// Returns a String containing the error message, or null if validation passes.
+  String? _validatePassword(String password) {
+    if (password.length < 10) {
+      return 'Password must be at least 10 characters long.';
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'Password must contain at least one uppercase character.';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'Password must contain at least one lowercase character.';
+    }
+    // Pattern to check for at least one special symbol: ! @ # $ % ^ & *
+    if (!RegExp(r'[!@#\$%\^&\*]').hasMatch(password)) {
+      return 'Password must contain at least one special symbol (!@#\$%^&*)';
+    }
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return 'Password must contain at least one number.';
+    }
+    return null; // Password is valid
+  }
+
+  /// Validates required registration fields (First Name, Last Name, Email).
+  /// Returns a String containing the error message, or null if validation passes.
+  String? _validateRegistrationFields() {
+    if (_authMode == AuthMode.register) {
+      if (_firstNameController.text.trim().isEmpty) {
+        return 'First Name is required.';
+      }
+      if (_lastNameController.text.trim().isEmpty) {
+        return 'Last Name is required.';
+      }
+      if (_emailController.text.trim().isEmpty) {
+        return 'Email is required.';
+      }
+    }
+    return null;
+  }
+
 
   Future<void> _submit() async {
     if (_loading) return;
@@ -108,8 +147,22 @@ class _AuthPageState extends State<AuthPage> {
 
       } else if (_authMode == AuthMode.register) {
         // --- REGISTER: Call service function ---
+
+        // 1. Required Field Check
+        String? fieldValidationError = _validateRegistrationFields();
+        if (fieldValidationError != null) {
+          throw Exception(fieldValidationError);
+        }
+
+        // 2. Password Match Check
         if (password != _confirmPasswordController.text.trim()) {
           throw Exception('Passwords do not match.');
+        }
+
+        // 3. Password Criteria Check
+        String? validationError = _validatePassword(password);
+        if (validationError != null) {
+          throw Exception(validationError);
         }
 
         await _authService.createAccount(
@@ -356,7 +409,6 @@ class _AuthPageState extends State<AuthPage> {
                       ),
 
                       // 2. Forgot Password Toggle (Now ONLY shown on Login screen)
-                      // Condition changed from (_authMode != AuthMode.forgotPassword) to (_authMode == AuthMode.login)
                       if (_authMode == AuthMode.login) 
                         TextButton(
                           onPressed: _toggleForgotPassword,
