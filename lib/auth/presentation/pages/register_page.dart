@@ -103,7 +103,7 @@ class RegisterPage extends StatelessWidget {
                     const SizedBox(height: 10),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/login');
+                        Navigator.pushNamed(context, '/login');
                       },
                       child: const Text('Already have an account? Log In'),
                     ),
