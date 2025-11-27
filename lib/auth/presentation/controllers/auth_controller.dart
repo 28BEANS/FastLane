@@ -42,6 +42,8 @@ class AuthController extends ChangeNotifier {
     middleName.clear();
   }
 
+  bool get isLoggedIn => _authService.currentUser != null;
+
   Future<String?> submit() async {
     if (loading) return null;
     loading = true;
@@ -79,5 +81,15 @@ class AuthController extends ChangeNotifier {
     }
 
     return null;
+  }
+
+  // ---------- Logout method ----------
+  Future<void> logout() async {
+    try {
+      await _authService.signOut();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Logout failed: $e');
+    }
   }
 }
