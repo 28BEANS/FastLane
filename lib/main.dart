@@ -6,6 +6,7 @@ import 'core/firebase_options.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/app_theme.dart';
 import 'chatbot/presentation/controllers/chatbot_controller.dart';
+import 'auth/presentation/controllers/auth_controller.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -18,6 +19,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => ChatbotController()),
       ],
       child: const MyApp(),
