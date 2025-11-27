@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
 import 'core/firebase_options.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/app_theme.dart';
+import 'chatbot/presentation/controllers/chatbot_controller.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ChatbotController()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -22,14 +33,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'FastLane',
       debugShowCheckedModeBanner: false,
-
-      // Theme Setup
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
-
-      // Routing
-      initialRoute: '/login',
+      initialRoute: '/chatbot',   // for testing
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../../auth/presentation/pages/login_page.dart';
 import '../../auth/presentation/pages/register_page.dart';
 import '../../auth/presentation/pages/forgot_password_page.dart';
-import '../../home/presentation/pages/home_page.dart'; // adjust if you later move this into features
+import '../../home/presentation/pages/home_page.dart'; 
+import '../../chatbot/presentation/pages/chatbot_page.dart'; 
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -16,6 +17,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
       case '/home':
         return MaterialPageRoute(builder: (_) => const HomePage());
+      case '/chatbot':
+        return MaterialPageRoute(builder: (_) => const ChatbotPage());
       default:
         return MaterialPageRoute(
           builder: (_) => const Scaffold(
