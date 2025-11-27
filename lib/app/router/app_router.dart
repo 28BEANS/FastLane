@@ -23,7 +23,7 @@ class AppRouter {
           if (!authController.isLoggedIn) return const LoginPage();
           return const HomePage();
         case '/chatbot':
-          if (!authController.isLoggedIn) return const LoginPage();
+          // if (!authController.isLoggedIn) return const LoginPage();
           return const ChatbotPage();
         default:
           return const Scaffold(
