@@ -1,4 +1,8 @@
+// inside nav_controller.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../auth/presentation/controllers/auth_controller.dart'; // REQUIRED IMPORT
 
 class NavController extends ChangeNotifier {
   int _currentIndex = 0;
@@ -9,8 +13,10 @@ class NavController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Handle Logout logic specifically
   void handleLogout(BuildContext context) {
+    // Fetch the global AuthController instance
+    final authController = context.read<AuthController>(); 
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -22,10 +28,20 @@ class NavController extends ChangeNotifier {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context); // Close dialog
-              // Navigate to login and remove all previous routes
-              Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
+              
+              // Fix: Perform the actual sign-out using AuthController
+              await authController.logout(); 
+
+              if (context.mounted) {
+                // Navigate to login and remove all previous routes
+                Navigator.pushNamedAndRemoveUntil(
+                  context, 
+                  "/login", 
+                  (route) => false,
+                );
+              }
             },
             child: const Text("Sign out"),
           ),

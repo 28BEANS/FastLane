@@ -4,51 +4,58 @@ import '../../core/controllers/nav_controller.dart';
 import '../../core/widgets/navbar.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../chatbot/presentation/pages/chatbot_page.dart';
-// Import your other pages here
 
 class MainShellPage extends StatelessWidget {
   const MainShellPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Provide the controller locally if it's not needed globally
-    return ChangeNotifierProvider(
-      create: (_) => NavController(),
-      child: const _MainShellView(),
-    );
+    return _MainShellView(); // non-const to allow rebuilds
   }
 }
 
 class _MainShellView extends StatelessWidget {
-  const _MainShellView();
+  _MainShellView();
 
   @override
   Widget build(BuildContext context) {
     final nav = context.watch<NavController>();
 
     final List<Widget> pages = [
-      const HomePage(),
-      const Scaffold(body: Center(child: Text("Checklist"))), // Placeholder
-      const ChatbotPage(),
-      const Scaffold(body: Center(child: Text("Maps"))), // Placeholder
+      const HomePage(),                       // stateless, can be const
+      const Scaffold(body: Center(child: Text("Checklist"))), // static
+      ChatbotPage(),                           // depends on provider, must NOT be const
+      const Scaffold(body: Center(child: Text("Maps"))),      // static
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xffF0F5FF),
-      // IndexedStack preserves the state of the pages (doesn't rebuild them when switching)
-      body: IndexedStack(
-        index: nav.currentIndex,
-        children: pages,
-      ),
-      bottomNavigationBar: CustomNavbar(
-        currentIndex: nav.currentIndex,
-        onTap: (index) {
-          if (index == 4) {
-            nav.handleLogout(context);
-          } else {
-            nav.setIndex(index);
-          }
-        },
+      body: Stack(
+        children: [
+          // Make pages fill the available space
+          IndexedStack(
+            index: nav.currentIndex,
+            children: pages.map((page) => SizedBox.expand(child: page)).toList(),
+          ),
+
+          // Align navbar at the bottom
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: CustomNavbar(
+                currentIndex: nav.currentIndex,
+                onTap: (index) {
+                  if (index == pages.length) {
+                    nav.handleLogout(context);
+                  } else if (index < pages.length) {
+                    nav.setIndex(index);
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

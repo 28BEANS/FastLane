@@ -27,7 +27,7 @@ class AppRouter {
           
           // One entry point for the entire authenticated app
           case '/dashboard':
-            return const MainShellPage();
+            return MainShellPage();
 
           default:
             return const Scaffold(
