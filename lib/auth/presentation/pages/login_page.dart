@@ -3,24 +3,39 @@ import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_text_field.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Reset the controller mode/fields when entering the page
+    // Using addPostFrameCallback ensures we don't modify state during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthController>().mode = AuthMode.login;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthController()..mode = AuthMode.login,
-      child: Consumer<AuthController>(
-        builder: (_, c, __) => WillPopScope(
-          onWillPop: () async => false, // Disable system back button
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Login'),
-              automaticallyImplyLeading: false, // remove back arrow
-            ),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
+    // ACCESS GLOBAL CONTROLLER (Do not create a new one here)
+    return Consumer<AuthController>(
+      builder: (_, c, __) => PopScope(
+        canPop: false, // Disables system back button
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Login'),
+            automaticallyImplyLeading: false,
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -40,8 +55,8 @@ class LoginPage extends StatelessWidget {
                       suffix: IconButton(
                         icon: Icon(c.passwordVisible ? Icons.visibility : Icons.visibility_off),
                         onPressed: () {
-                          c.passwordVisible = !c.passwordVisible;
-                          c.notifyListeners();
+                          // Ensure your controller has a toggle method or use setter
+                          c.togglePasswordVisibility(); 
                         },
                       ),
                     ),
@@ -55,10 +70,16 @@ class LoginPage extends StatelessWidget {
                             : () async {
                                 final error = await c.submit();
                                 if (error != null) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(error)));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(error)),
+                                    );
+                                  }
                                 } else {
-                                  Navigator.pushReplacementNamed(context, '/home');
+                                  // SUCCESS: Navigate to the SHELL, not the home page
+                                  if (context.mounted) {
+                                    Navigator.pushReplacementNamed(context, '/dashboard');
+                                  }
                                 }
                               },
                         child: c.loading
@@ -68,15 +89,11 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register');
-                      },
+                      onPressed: () => Navigator.pushNamed(context, '/register'),
                       child: const Text('Need an account? Register'),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/forgot-password');
-                      },
+                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
                       child: const Text('Forgot Password?'),
                     ),
                   ],

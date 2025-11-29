@@ -21,7 +21,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
         children: [
           Container(
             width: double.infinity,
-            height: 190,
+            height: 175,
             color: Colors.blue,
             padding: const EdgeInsets.only(left: 40),
             child: Column(
@@ -86,7 +86,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
           ),
 
           Padding(
-            padding: const EdgeInsets.only(bottom: 100),
+            padding: const EdgeInsets.only(bottom: 150),
             child: TextFormField(
               controller: _textController,
               onFieldSubmitted: (value) {
