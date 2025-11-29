@@ -21,6 +21,26 @@ class AuthController extends ChangeNotifier {
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
 
+  // ------------------------------------------------------------------
+  //  VISIBILITY TOGGLE METHODS (NEW)
+  // ------------------------------------------------------------------
+
+  /// Toggles the visibility state for the main password field.
+  void togglePasswordVisibility() {
+    passwordVisible = !passwordVisible;
+    notifyListeners();
+  }
+
+  /// Toggles the visibility state for the confirm password field.
+  void toggleConfirmPasswordVisibility() {
+    confirmPasswordVisible = !confirmPasswordVisible;
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------------
+  //  FORM MANAGEMENT
+  // ------------------------------------------------------------------
+
   void toggleForm() {
     mode = mode == AuthMode.login ? AuthMode.register : AuthMode.login;
     clearControllers();
@@ -40,7 +60,14 @@ class AuthController extends ChangeNotifier {
     firstName.clear();
     lastName.clear();
     middleName.clear();
+    // Reset visibility when clearing forms
+    passwordVisible = false;
+    confirmPasswordVisible = false;
   }
+
+  // ------------------------------------------------------------------
+  //  BUSINESS LOGIC
+  // ------------------------------------------------------------------
 
   bool get isLoggedIn => _authService.currentUser != null;
 
