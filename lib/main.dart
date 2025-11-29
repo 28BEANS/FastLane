@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
-      initialRoute: '/chatbot',   // for testing
+      initialRoute: '/login',   // for testing
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

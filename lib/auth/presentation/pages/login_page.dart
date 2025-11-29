@@ -58,7 +58,7 @@ class LoginPage extends StatelessWidget {
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(SnackBar(content: Text(error)));
                                 } else {
-                                  Navigator.pushReplacementNamed(context, '/home');
+                                  Navigator.pushReplacementNamed(context, '/dashboard');
                                 }
                               },
                         child: c.loading

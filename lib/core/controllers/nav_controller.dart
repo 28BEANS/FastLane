@@ -1,29 +1,16 @@
 import 'package:flutter/material.dart';
 
 class NavController extends ChangeNotifier {
-  int currentIndex = 0;
+  int _currentIndex = 0;
+  int get currentIndex => _currentIndex;
 
-  final List<String> routes = [
-    "/home",
-    "/checklist",
-    "/chatbot",
-    "/maps",
-    "/logout",
-  ];
-
-  void handleTap(BuildContext context, int index) {
-    if (index == 4) {
-      _showLogoutDialog(context);
-      return;
-    }
-
-    currentIndex = index;
+  void setIndex(int index) {
+    _currentIndex = index;
     notifyListeners();
-
-    Navigator.pushReplacementNamed(context, routes[index]);
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  // Handle Logout logic specifically
+  void handleLogout(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -36,8 +23,9 @@ class NavController extends ChangeNotifier {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, "/login");
+              Navigator.pop(context); // Close dialog
+              // Navigate to login and remove all previous routes
+              Navigator.pushNamedAndRemoveUntil(context, "/login", (route) => false);
             },
             child: const Text("Sign out"),
           ),
