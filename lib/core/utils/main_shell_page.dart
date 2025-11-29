@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:yourapp/core/utils/nav_controller.dart';
-import 'package:yourapp/core/widgets/navbar.dart';
+import 'package:fast_lane/core/controllers/nav_controller.dart';
+import 'package:fast_lane/core/widgets/navbar.dart';
 
 class MainShellPage extends StatefulWidget {
   final Widget child;
@@ -12,12 +12,12 @@ class MainShellPage extends StatefulWidget {
 }
 
 class _MainShellPageState extends State<MainShellPage> {
-  late NavigationController nav;
+  late NavController nav;
 
   @override
   void initState() {
     super.initState();
-    nav = NavigationController();
+    nav = NavController();
     nav.addListener(() => setState(() {}));
   }
 
