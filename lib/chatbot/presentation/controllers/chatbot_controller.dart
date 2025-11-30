@@ -1,44 +1,49 @@
 import 'package:flutter/foundation.dart';
-import '../utils/json_convert.dart'; // Import your LLM response parser
+import '../utils/json_convert.dart';
 import '../../data/chatbot_service.dart';
 import 'package:fast_lane/core/constants/document_constants.dart';
 import '../../data/llm_service.dart';
+import '../../../checklist/presentation/controllers/checklist_controller.dart';
 
 class ChatbotController with ChangeNotifier {
-
   final availableDocuments = DocumentType.values.map((d) => d.name).toList();
-
   final List<Map<String, String>> messages = [];
   late final LlmService _llm;
 
   List<String> lastSuggestedRequirements = [];
-  List<String> userChecklist = [];
+  late ChecklistController checklistController;
 
-  ChatbotController() {
+  String? lastSuggestedTaskName;
+
+  ChatbotController({required ChecklistController checklistController}) {
     _llm = LlmService();
+    this.checklistController = checklistController;
   }
 
-  // Send message method
-  Future<void> sendMessage(String userMessage) async {
+  /// Update checklist controller reference (for ProxyProvider)
+  void updateChecklistController(ChecklistController controller) {
+    checklistController = controller;
+  }
 
+  Future<void> sendMessage(String userMessage) async {
     if (userMessage.trim().isEmpty) return;
 
     messages.insert(0, {"role": "user", "text": userMessage});
     notifyListeners();
 
     try {
-
-      // LLM Analyzing user Intent
       final userIntent = await _llm.identifyUserIntent(availableDocuments, userMessage);
-      final UserRequest request = parseLLMResponse(userIntent);
+      final request = parseLLMResponse(userIntent);
 
-      // Additional Context for LLM
-      final List<String> documentRequirements = await fetchDocumentRequirements(request.documents);
+      // Save document name as task name
+      lastSuggestedTaskName = request.documents;
+
+      final documentRequirements = await fetchDocumentRequirements(request.documents);
       lastSuggestedRequirements = documentRequirements;
       notifyListeners();
-      final bool hasDocs = documentRequirements.isNotEmpty;
 
-      // LLM Response
+      final hasDocs = documentRequirements.isNotEmpty;
+
       final documentResponse = await _llm.generateDocumentResponse(
           hasDocs,
           request.intent,
@@ -54,16 +59,18 @@ class ChatbotController with ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------------- CHECKLIST ACTIONS ----------------------
-
-  void addToChecklist() {
-    userChecklist.addAll(lastSuggestedRequirements);
+  void clearSuggestion() {
     lastSuggestedRequirements = [];
+    lastSuggestedTaskName = null;
     notifyListeners();
   }
 
-  void clearSuggestion() {
-    lastSuggestedRequirements = [];
-    notifyListeners();
+  void confirmChecklistTask() {
+    if (lastSuggestedRequirements.isNotEmpty && lastSuggestedTaskName != null) {
+      checklistController.addTask(lastSuggestedTaskName!, lastSuggestedRequirements);
+      lastSuggestedRequirements = [];
+      lastSuggestedTaskName = null;
+      notifyListeners();
+    }
   }
 }
