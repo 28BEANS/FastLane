@@ -19,6 +19,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
     return Scaffold(
       body: Column(
         children: [
+          // ----------------- HEADER (UNCHANGED) -----------------
           Container(
             width: double.infinity,
             height: 175,
@@ -54,6 +55,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
             ),
           ),
 
+          // ----------------- MESSAGES (UNCHANGED) -----------------
           Expanded(
             child: ListView.builder(
               reverse: true,
@@ -85,8 +87,56 @@ class _ChatbotPageState extends State<ChatbotPage> {
             ),
           ),
 
+          // ------------------------------------------------------------------
+          // NEW: Checklist confirmation panel
+          // (ONLY shows if the controller has suggestions)
+          // ------------------------------------------------------------------
+          if (controller.lastSuggestedRequirements.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Add these to your checklist?",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  ...controller.lastSuggestedRequirements.map(
+                    (req) => Text("• $req",
+                        style: const TextStyle(fontSize: 14)),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          controller.addToChecklist();
+                        },
+                        child: const Text("Add"),
+                      ),
+                      const SizedBox(width: 10),
+                      TextButton(
+                        onPressed: () {
+                          controller.clearSuggestion();
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+
+          // ----------------- INPUT BOX (UNCHANGED) -----------------
           Padding(
-            padding: const EdgeInsets.only(bottom: 150),
+            padding: const EdgeInsets.only(bottom: 120),
             child: TextFormField(
               controller: _textController,
               onFieldSubmitted: (value) {
