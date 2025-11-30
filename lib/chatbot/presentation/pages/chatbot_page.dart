@@ -19,42 +19,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
     return Scaffold(
       body: Column(
         children: [
-          // ----------------- HEADER (UNCHANGED) -----------------
-          Container(
-            width: double.infinity,
-            height: 175,
-            color: Colors.blue,
-            padding: const EdgeInsets.only(left: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Transform.translate(
-                  offset: const Offset(0, 50),
-                  child: const Text(
-                    'Juan de la Cruz',
-                    style: TextStyle(fontSize: 40, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Transform.translate(
-                  offset: const Offset(0, 40),
-                  child: const Text(
-                    'juandelacruz@email.com',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Transform.translate(
-                  offset: const Offset(30, 40),
-                  child: const Text(
-                    'Unemployed',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
           // ----------------- MESSAGES (UNCHANGED) -----------------
           Expanded(
             child: ListView.builder(

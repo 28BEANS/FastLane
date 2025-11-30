@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/controllers/nav_controller.dart';
 import '../../core/widgets/navbar.dart';
+import '../../core/widgets/header.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../chatbot/presentation/pages/chatbot_page.dart';
 import '../../checklist/presentation/pages/checklist_page.dart';
@@ -33,11 +34,19 @@ class _MainShellView extends StatelessWidget {
       backgroundColor: const Color(0xffF0F5FF),
       body: Stack(
         children: [
-          // Make pages fill the available space
-          IndexedStack(
-            index: nav.currentIndex,
-            children: pages.map((page) => SizedBox.expand(child: page)).toList(),
-          ),
+            Column(
+              children: [
+                const GlobalHeader(),
+                
+                // Fill space below the navbar
+                Expanded(
+                  child: IndexedStack(
+                  index: nav.currentIndex,
+                  children: pages.map((page) => SizedBox.expand(child: page)).toList(),
+                  ),
+                ),
+              ],
+            ),
 
           // Align navbar at the bottom
           Align(
