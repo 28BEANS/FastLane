@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<List<String>> fetchDocumentRequirements(String documentName) async {
+  print("[INFO] chatbot_service.fetchDocumentRequirements called with $documentName");
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   try {
