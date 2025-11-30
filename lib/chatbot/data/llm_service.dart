@@ -74,13 +74,13 @@ class LlmService {
 
       final prompt = hasDocs
           ? """
-            Based on the user's intent: "${intent}", and the document they need: "${document}",
-            the required documents are: ${requirements}.
+            Based on the user's intent: "$intent", and the document they need: "$document",
+            the required documents are: $requirements.
 
             Write a friendly answer listing these.
             """
           : """
-            The document "${document}" is not on the list.
+            The document "$document" is not on the list.
             Write a friendly response saying this.
             """;
 

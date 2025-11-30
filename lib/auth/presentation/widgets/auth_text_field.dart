@@ -8,6 +8,7 @@ class AuthTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final TextInputAction textInputAction;
   final Widget? suffix;
+  final Widget? prefix;
 
   const AuthTextField({
     super.key,
@@ -18,7 +19,10 @@ class AuthTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.textInputAction = TextInputAction.done,
     this.suffix,
+    this.prefix,
   });
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,8 @@ class AuthTextField extends StatelessWidget {
         textInputAction: textInputAction,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon),
+          prefix: prefix,
+          prefixIcon: prefix == null ? Icon(icon) : null,
           suffixIcon: suffix,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           focusedBorder: OutlineInputBorder(

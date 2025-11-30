@@ -1,7 +1,9 @@
+import 'package:fast_lane/auth/presentation/widgets/auth_country_field.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_text_field.dart';
+import 'package:country_picker/country_picker.dart'; 
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -43,6 +45,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     icon: Icons.person_outline,
                     textInputAction: TextInputAction.next,
                   ),
+                  const SizedBox(height: 15),
+                  CountryPickerField(label: 'Country'),
                   const SizedBox(height: 15),
                   AuthTextField(
                     controller: c.middleName,

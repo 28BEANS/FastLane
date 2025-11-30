@@ -17,7 +17,7 @@ class MainShellPage extends StatelessWidget {
 }
 
 class _MainShellView extends StatelessWidget {
-  _MainShellView();
+  const _MainShellView();
 
   @override
   Widget build(BuildContext context) {

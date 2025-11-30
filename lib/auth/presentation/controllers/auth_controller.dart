@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/auth_service.dart';
 import '../utils/auth_validators.dart';
+import 'package:country_picker/country_picker.dart';
 
 enum AuthMode { login, register, forgotPassword }
 
@@ -14,12 +15,14 @@ class AuthController extends ChangeNotifier {
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final middleName = TextEditingController();
+  final _countryController = TextEditingController();
 
   // State
   AuthMode mode = AuthMode.login;
   bool loading = false;
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
+  String? _selectedCountryCode;
 
   // ------------------------------------------------------------------
   //  VISIBILITY TOGGLE METHODS (NEW)
@@ -95,6 +98,7 @@ class AuthController extends ChangeNotifier {
           firstName: firstName.text.trim(),
           lastName: lastName.text.trim(),
           middleName: middleName.text.trim(),
+          countryCode: _selectedCountryCode!,
         );
       } else if (mode == AuthMode.forgotPassword) {
         if (email.text.trim().isEmpty) return 'Please enter your email';

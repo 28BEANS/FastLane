@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
 class AuthService {
@@ -20,6 +21,7 @@ class AuthService {
     required String password,
     required String firstName, 
     required String lastName, 
+    required String countryCode,
     String? middleName,
   }) async {
     final UserCredential userCredential = await firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
@@ -30,6 +32,7 @@ class AuthService {
         'firstName' : firstName, 
         'lastName' : lastName,
         'middleName' : middleName ?? '',
+        'countryCode' : countryCode,
         'email' : user.email,
         'createdAt' : FieldValue.serverTimestamp(),
       });
