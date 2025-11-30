@@ -4,6 +4,7 @@ import '../../core/controllers/nav_controller.dart';
 import '../../core/widgets/navbar.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../chatbot/presentation/pages/chatbot_page.dart';
+import '../../checklist/presentation/pages/checklist_page.dart';
 
 class MainShellPage extends StatelessWidget {
   const MainShellPage({super.key});
@@ -23,7 +24,7 @@ class _MainShellView extends StatelessWidget {
 
     final List<Widget> pages = [
       const HomePage(),                       // stateless, can be const
-      const Scaffold(body: Center(child: Text("Checklist"))), // static
+      ChecklistPage(),                  // depends on provider, must NOT be const
       ChatbotPage(),                           // depends on provider, must NOT be const
       const Scaffold(body: Center(child: Text("Maps"))),      // static
     ];

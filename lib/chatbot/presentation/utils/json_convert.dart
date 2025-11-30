@@ -8,12 +8,16 @@ class UserRequest {
 }
 
 UserRequest parseLLMResponse(String llmOutput) {
-  // Parse the JSON string into a Map
-  final Map<String, dynamic> parsedData = jsonDecode(llmOutput);
+  try {
+    // Parse the JSON string into a Map
+    final Map<String, dynamic> parsedData = jsonDecode(llmOutput);
 
-  // Since the JSON has only one key-value pair, extract it
-  final String intent = parsedData.keys.first;
-  final String documents = parsedData[intent];
+    // Since the JSON has only one key-value pair, extract it
+    final String intent = parsedData.keys.first;
+    final String documents = parsedData[intent]?.toString() ?? "";
 
-  return UserRequest(intent: intent, documents: documents);
+    return UserRequest(intent: intent, documents: documents);
+  } catch (e) {
+    throw Exception("json_convert.parseLLMResponse Error Error: ${e.toString()}");
+  }
 }
