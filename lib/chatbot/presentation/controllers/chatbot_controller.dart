@@ -34,6 +34,8 @@ class ChatbotController with ChangeNotifier {
 
       // Additional Context for LLM
       final List<String> documentRequirements = await fetchDocumentRequirements(request.documents);
+      lastSuggestedRequirements = documentRequirements;
+      notifyListeners();
       final bool hasDocs = documentRequirements.isNotEmpty;
 
       // LLM Response
