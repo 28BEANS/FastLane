@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/firebase_options.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/app_theme.dart';
-import 'chatbot/presentation/controllers/chatbot_controller.dart';
 import 'auth/presentation/controllers/auth_controller.dart';
 import 'core/controllers/nav_controller.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'chatbot/presentation/controllers/chatbot_controller.dart';
+import 'checklist/presentation/controllers/checklist_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,13 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => NavController()),
-        ChangeNotifierProvider(create: (_) => ChatbotController()),
+        ChangeNotifierProvider(create: (_) => ChecklistController()),
+        ChangeNotifierProxyProvider<ChecklistController, ChatbotController>(
+          create: (context) =>
+              ChatbotController(checklistController: context.read<ChecklistController>()),
+          update: (context, checklistController, previous) =>
+              previous!..updateChecklistController(checklistController),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -40,7 +47,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
-      initialRoute: '/login',   // for testing
+      initialRoute: '/login', // for testing
       onGenerateRoute: AppRouter.generateRoute,
     );
   }
