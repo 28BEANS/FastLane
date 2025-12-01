@@ -20,6 +20,7 @@ class ChecklistPage extends StatelessWidget {
           itemCount: tasks.length,
           itemBuilder: (context, index) {
             final task = tasks[index];
+            final progressPercentage = (task.progress * 100).toInt();
 
             return Card(
               margin: const EdgeInsets.only(bottom: 16),
@@ -27,27 +28,110 @@ class ChecklistPage extends StatelessWidget {
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(task.taskName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(
-                      width: 100,
-                      child: LinearProgressIndicator(
-                        value: task.progress,
-                        backgroundColor: Colors.grey.shade300,
-                        color: Colors.blue,
-                        minHeight: 6,
-                      ),
+                    Text(
+                      task.taskName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: LinearProgressIndicator(
+                            value: task.progress,
+                            backgroundColor: Colors.grey.shade300,
+                            color: Colors.blue,
+                            minHeight: 6,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text("$progressPercentage%"),
+                      ],
                     ),
                   ],
                 ),
                 children: task.items.map((item) {
-                  return CheckboxListTile(
+                  return ListTile(
+                    leading: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: item.done ? Colors.green : Colors.transparent,
+                        border: Border.all(
+                            color: item.done ? Colors.green : Colors.grey),
+                      ),
+                      child: item.done
+                          ? const Icon(Icons.check,
+                              color: Colors.white, size: 16)
+                          : null,
+                    ),
                     title: Text(item.label),
-                    value: item.done,
-                    onChanged: (_) {
-                      controller.toggleItemDone(task, item);
-                    },
+                    trailing: item.done
+                        ? ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text("Confirm"),
+                                  content: Text(
+                                      "Mark '${item.label}' as incomplete?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Confirm"),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm ?? false) {
+                                controller.toggleItemDone(task, item);
+                              }
+                            },
+                            child: const Text("Undone"),
+                          )
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                            ),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text("Confirm"),
+                                  content: Text(
+                                      "Mark '${item.label}' as done?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Confirm"),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm ?? false) {
+                                controller.toggleItemDone(task, item);
+                              }
+                            },
+                            child: const Text("Done"),
+                          ),
                   );
                 }).toList(),
               ),
