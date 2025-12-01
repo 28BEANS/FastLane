@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../../auth/presentation/pages/login_page.dart';
 import '../../auth/presentation/pages/register_page.dart';
+import '../../auth/presentation/pages/address_page.dart'; 
 import '../../auth/presentation/pages/forgot_password_page.dart';
 import '../../core/utils/main_shell_page.dart';
 
@@ -22,13 +23,12 @@ class AppRouter {
             return const LoginPage();
           case '/register':
             return const RegisterPage();
+          case '/register-address': // <-- new step
+            return const RegisterAddressPage();
           case '/forgot-password':
             return const ForgotPasswordPage();
-          
-          // One entry point for the entire authenticated app
           case '/dashboard':
             return MainShellPage();
-
           default:
             return const Scaffold(
               body: Center(child: Text("Route not found")),

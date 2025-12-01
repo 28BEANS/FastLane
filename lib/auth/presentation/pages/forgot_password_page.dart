@@ -44,7 +44,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     onPressed: c.loading
                         ? null
                         : () async {
-                            final error = await c.submit();
+                            final error = await c.forgotPassword();
                             if (error != null) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
