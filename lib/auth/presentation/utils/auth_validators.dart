@@ -7,7 +7,8 @@ String? validatePassword(String password) {
   return null;
 }
 
-String? validateRegistration(
+/// Step 1: Validate basic registration fields (first page)
+String? validateRegistrationStep1(
   String firstName,
   String lastName,
   String email,
@@ -19,4 +20,18 @@ String? validateRegistration(
   if (email.trim().isEmpty) return 'Email is required.';
   if (password != confirmPassword) return 'Passwords do not match.';
   return validatePassword(password);
+}
+
+/// Step 2: Validate address fields (second page)
+String? validateRegistrationStep2({
+  required String country,
+  required String region,
+  required String city,
+  required String street,
+}) {
+  if (country.trim().isEmpty) return 'Country is required.';
+  if (region.trim().isEmpty) return 'Region/Province is required.';
+  if (city.trim().isEmpty) return 'City is required.';
+  if (street.trim().isEmpty) return 'Street address is required.';
+  return null;
 }

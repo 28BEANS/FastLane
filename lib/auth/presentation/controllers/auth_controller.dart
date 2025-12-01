@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/auth_service.dart';
 import '../utils/auth_validators.dart';
-import 'package:country_picker/country_picker.dart';
+import '../../data/geocoding_service.dart';
 
 enum AuthMode { login, register, forgotPassword }
 
@@ -15,7 +15,11 @@ class AuthController extends ChangeNotifier {
   final firstName = TextEditingController();
   final lastName = TextEditingController();
   final middleName = TextEditingController();
-  final _countryController = TextEditingController();
+  final country = TextEditingController();
+  final region = TextEditingController();
+  final city = TextEditingController();
+  final street = TextEditingController();
+  final postalCode = TextEditingController();
 
   // State
   AuthMode mode = AuthMode.login;
@@ -23,27 +27,25 @@ class AuthController extends ChangeNotifier {
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
   String? _selectedCountryCode;
+  double? latitude;
+  double? longitude;
 
   // ------------------------------------------------------------------
-  //  VISIBILITY TOGGLE METHODS (NEW)
+  // Visibility Toggle
   // ------------------------------------------------------------------
-
-  /// Toggles the visibility state for the main password field.
   void togglePasswordVisibility() {
     passwordVisible = !passwordVisible;
     notifyListeners();
   }
 
-  /// Toggles the visibility state for the confirm password field.
   void toggleConfirmPasswordVisibility() {
     confirmPasswordVisible = !confirmPasswordVisible;
     notifyListeners();
   }
 
   // ------------------------------------------------------------------
-  //  FORM MANAGEMENT
+  // Form Management
   // ------------------------------------------------------------------
-
   void toggleForm() {
     mode = mode == AuthMode.login ? AuthMode.register : AuthMode.login;
     clearControllers();
@@ -63,47 +65,30 @@ class AuthController extends ChangeNotifier {
     firstName.clear();
     lastName.clear();
     middleName.clear();
-    // Reset visibility when clearing forms
+    country.clear();
+    region.clear();
+    city.clear();
+    street.clear();
+    postalCode.clear();
     passwordVisible = false;
     confirmPasswordVisible = false;
   }
 
   // ------------------------------------------------------------------
-  //  BUSINESS LOGIC
+  // Business Logic
   // ------------------------------------------------------------------
-
   bool get isLoggedIn => _authService.currentUser != null;
 
-  Future<String?> submit() async {
+  // ---------------- Login ----------------
+  Future<String?> login() async {
     if (loading) return null;
     loading = true;
     notifyListeners();
 
     try {
-      if (mode == AuthMode.login) {
-        await _authService.signIn(email.text.trim(), password.text.trim());
-      } else if (mode == AuthMode.register) {
-        final error = validateRegistration(
-          firstName.text,
-          lastName.text,
-          email.text,
-          password.text,
-          confirmPassword.text,
-        );
-        if (error != null) return error;
-
-        await _authService.createAccount(
-          email: email.text.trim(),
-          password: password.text.trim(),
-          firstName: firstName.text.trim(),
-          lastName: lastName.text.trim(),
-          middleName: middleName.text.trim(),
-          countryCode: _selectedCountryCode!,
-        );
-      } else if (mode == AuthMode.forgotPassword) {
-        if (email.text.trim().isEmpty) return 'Please enter your email';
-        await _authService.resetPassword(email: email.text.trim());
-      }
+      if (email.text.trim().isEmpty) return 'Please enter your email';
+      if (password.text.trim().isEmpty) return 'Please enter your password';
+      await _authService.signIn(email.text.trim(), password.text.trim());
     } catch (e) {
       return e.toString();
     } finally {
@@ -114,7 +99,94 @@ class AuthController extends ChangeNotifier {
     return null;
   }
 
-  // ---------- Logout method ----------
+  // ---------------- Forgot Password ----------------
+  Future<String?> forgotPassword() async {
+    if (loading) return null;
+    loading = true;
+    notifyListeners();
+
+    try {
+      if (email.text.trim().isEmpty) return 'Please enter your email';
+      await _authService.resetPassword(email: email.text.trim());
+    } catch (e) {
+      return e.toString();
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+
+    return null;
+  }
+
+  // ---------------- Registration ----------------
+  /// Step 1 validation only
+  String? validateFirstPage() {
+    return validateRegistrationStep1(
+      firstName.text,
+      lastName.text,
+      email.text,
+      password.text,
+      confirmPassword.text,
+    );
+  }
+
+  /// Step 2 submission + account creation
+  Future<String?> submitRegistration() async {
+    if (loading) return null;
+    loading = true;
+    notifyListeners();
+
+    try {
+      // Validate Step 1
+      final step1Error = validateRegistrationStep1(
+        firstName.text,
+        lastName.text,
+        email.text,
+        password.text,
+        confirmPassword.text,
+      );
+      if (step1Error != null) return step1Error;
+
+      // Validate Step 2
+      final addrError = validateRegistrationStep2(
+        country: country.text,
+        region: region.text,
+        city: city.text,
+        street: street.text,
+      );
+      if (addrError != null) return addrError;
+
+      // Geocode address
+      final ok = await resolveCoordinates();
+      if (!ok) return "Unable to locate address. Please check your details.";
+
+      // Create account in Firebase
+      await _authService.createAccount(
+        email: email.text.trim(),
+        password: password.text.trim(),
+        firstName: firstName.text.trim(),
+        lastName: lastName.text.trim(),
+        middleName: middleName.text.trim(),
+        countryCode: _selectedCountryCode ?? '',
+        country: country.text.trim(),
+        region: region.text.trim(),
+        city: city.text.trim(),
+        street: street.text.trim(),
+        postalCode: postalCode.text.trim(),
+        latitude: latitude,
+        longitude: longitude,
+      );
+    } catch (e) {
+      return e.toString();
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+
+    return null;
+  }
+
+  // ---------------- Logout ----------------
   Future<void> logout() async {
     try {
       await _authService.signOut();
@@ -122,5 +194,16 @@ class AuthController extends ChangeNotifier {
     } catch (e) {
       debugPrint('Logout failed: $e');
     }
+  }
+
+  // ---------------- Geocoding ----------------
+  Future<bool> resolveCoordinates() async {
+    final fullAddress =
+        "${street.text}, ${city.text}, ${region.text}, ${postalCode.text}, ${country.text}";
+    final coords = await GeocodingService.getCoordinates(fullAddress);
+    if (coords == null) return false;
+    latitude = coords['lat'];
+    longitude = coords['lng'];
+    return true;
   }
 }

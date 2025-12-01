@@ -2,9 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-
-ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
-
 class AuthService {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -15,56 +12,47 @@ class AuthService {
   Future<void> signIn(String email, String password) async {
     await firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
   }
-  
+
   Future<void> createAccount({
     required String email,
     required String password,
-    required String firstName, 
-    required String lastName, 
+    required String firstName,
+    required String lastName,
     required String countryCode,
     String? middleName,
+    String? country,
+    String? region,
+    String? city,
+    String? street,
+    String? postalCode,
+    double? latitude,
+    double? longitude,
   }) async {
-    final UserCredential userCredential = await firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
+    final UserCredential userCredential =
+        await firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
     final User? user = userCredential.user;
 
-    if (user != null){
+    if (user != null) {
       await firestore.collection('users').doc(user.uid).set({
-        'firstName' : firstName, 
-        'lastName' : lastName,
-        'middleName' : middleName ?? '',
-        'countryCode' : countryCode,
-        'email' : user.email,
-        'createdAt' : FieldValue.serverTimestamp(),
+        'firstName': firstName,
+        'lastName': lastName,
+        'middleName': middleName ?? '',
+        'countryCode': countryCode,
+        'country': country ?? '',
+        'region': region ?? '',
+        'city': city ?? '',
+        'street': street ?? '',
+        'postalCode': postalCode ?? '',
+        'lat': latitude,
+        'lng': longitude,
+        'email': user.email,
+        'createdAt': FieldValue.serverTimestamp(),
       });
     }
   }
 
-  Future<void> signOut() async {
-    await firebaseAuth.signOut();
-  }
+  Future<void> signOut() async => await firebaseAuth.signOut();
 
-  Future<void> resetPassword({required String email}) async {
-    await firebaseAuth.sendPasswordResetEmail(email: email);
-  }
-
-  Future<void> updateUsername({required String username}) async {
-    await currentUser!.updateDisplayName(username);
-  }
-
-  // Future<void> deleteAccount({required String email, required String password}) async {
-  //   AuthCredential credential = EmailAuthProvider.credential(email: email, password: password);
-  //   await currentUser!.reauthenticateWithCredential(credential);
-  //   await currentUser!.delete();
-  //   await firebaseAuth.signOut();
-  // } if needed in future
-
-  Future<void> resetPasswordFromCurrentPassword({
-    required String currentPassword,
-    required String newPassword,
-    required String email,
-  }) async {
-    AuthCredential credential = EmailAuthProvider.credential(email: email, password: currentPassword);
-    await currentUser!.reauthenticateWithCredential(credential);
-    await currentUser!.updatePassword(newPassword);
-  }
+  Future<void> resetPassword({required String email}) async =>
+      await firebaseAuth.sendPasswordResetEmail(email: email);
 }

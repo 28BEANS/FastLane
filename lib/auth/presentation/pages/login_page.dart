@@ -65,27 +65,26 @@ class _LoginPageState extends State<LoginPage> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: c.loading
-                            ? null
-                            : () async {
-                                final error = await c.submit();
-                                if (error != null) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(error)),
-                                    );
-                                  }
-                                } else {
-                                  // SUCCESS: Navigate to the SHELL, not the home page
-                                  if (context.mounted) {
-                                    Navigator.pushReplacementNamed(context, '/dashboard');
-                                  }
-                                }
-                              },
-                        child: c.loading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('LOGIN'),
-                      ),
+                              onPressed: c.loading
+                                  ? null
+                                  : () async {
+                                      final error = await c.login(); 
+                                      if (error != null) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(error)),
+                                          );
+                                        }
+                                      } else {
+                                        if (context.mounted) {
+                                          Navigator.pushReplacementNamed(context, '/dashboard');
+                                        }
+                                      }
+                                    },
+                              child: c.loading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text('LOGIN'),
+                            ),
                     ),
                     const SizedBox(height: 10),
                     TextButton(
