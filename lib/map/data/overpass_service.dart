@@ -6,80 +6,64 @@ import 'office_location.dart';
 // services/overpass_service.dart
 
 class OverpassService {
-  static const String _overpassUrl = 'https://overpass-api.de/api/interpreter';
+static const String _url = 'https://overpass-api.de/api/interpreter';
 
-  Future<List<OfficeLocation>> getNearbyOffices({
-    required double userLat,
-    required double userLon,
-    required double radiusInMeters,
-    required String queryTag, // Can now contain ' or '
-  }) async {
-    String createSearchLine(String tagFilter) {
-      // Handles both simple and complex tags, assuming tagFilter is like ["key"="value"]
-      // or ["key1"="val1"]["key2"="val2"]
-      final around = '(around:$radiusInMeters, $userLat, $userLon)';
-      return '''
-        node$tagFilter$around;
-        way$tagFilter$around;
-        relation$tagFilter$around;
-      ''';
-    }
 
-    String queryElements;
+Future<List<OfficeLocation>> getNearbyOffices({
+required double userLat,
+required double userLon,
+required double radiusInMeters,
+required List<String> tags, // list of key=value strings
+}) async {
+// Build search lines for each tag and element type
+String buildLine(String tag) {
+final kv = tag.split('=');
+if (kv.length != 2) return ''; // skip invalid tags
+final key = kv[0].trim();
+final value = kv[1].trim();
+final filter = '["$key"="$value"]';
+return 'node$filter(around:$radiusInMeters,$userLat,$userLon);\nway$filter(around:$radiusInMeters,$userLat,$userLon);\nrelation$filter(around:$radiusInMeters,$userLat,$userLon);';
+}
 
-    if (queryTag.toLowerCase().contains(' or ')) {
-      // --- UNION QUERY HANDLING (Multiple Tags) ---
-      final tags = queryTag.split(' or ').map((t) => t.trim());
-      
-      // Combine the search line for each tag
-      queryElements = tags.map((t) {
-        final parts = t.split('=');
-        final tagFilter = '["${parts[0]}"="${parts[1]}"]';
-        return createSearchLine(tagFilter);
-      }).join('\n');
 
-    } else {
-      // --- SINGLE TAG HANDLING ---
-      // This assumes you have simplified your map function to only return key=value
-      final parts = queryTag.split('=');
-      final tagFilter = '["${parts[0]}"="${parts[1]}"]';
-      queryElements = createSearchLine(tagFilter);
-    }
+final queryElements = tags.map(buildLine).join('\n');
+final query = '''[out:json][timeout:60];($queryElements);out center;''';
 
-    // 2. Construct the final query string
-    final query = '''
-      [out:json][timeout:60];
-      (
-        $queryElements
-      );
-      out center;
-    ''';
-    
-    try {
-      final response = await http.post(
-        Uri.parse(_overpassUrl),
-        body: query,
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      );
 
-      if (response.statusCode == 200) {
-        // ... (rest of success parsing logic)
-        final data = json.decode(response.body);
-        final elements = data['elements'] as List;
+try {
+final res = await http.post(Uri.parse(_url),
+headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+body: query);
+if (res.statusCode != 200) throw Exception('Overpass error ${res.statusCode}');
 
-        return elements
-            .where((e) => e['type'] == 'node' && e.containsKey('lat'))
-            .map((e) => OfficeLocation.fromJson(e))
-            .toList();
-      } else {
-        print('Overpass query sent:\n$query'); // Log the query for debugging
-        print('Overpass response body: ${response.body}');
-        throw Exception(
-            'Overpass API failed with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching nearby offices: $e');
-      return [];
-    }
-  }
+
+final data = json.decode(res.body);
+final elements = data['elements'] as List;
+
+
+// Map all elements to OfficeLocation
+return elements.map((e) {
+double lat = 0.0;
+double lon = 0.0;
+if (e['type'] == 'node') {
+lat = (e['lat'] as num).toDouble();
+lon = (e['lon'] as num).toDouble();
+} else if (e.containsKey('center')) {
+lat = (e['center']['lat'] as num).toDouble();
+lon = (e['center']['lon'] as num).toDouble();
+}
+final tags = e['tags'] ?? {};
+return OfficeLocation(
+id: e['id'] as int,
+name: tags['name'] ?? 'Unknown Location',
+address: tags['addr:full'] ?? tags['addr:street'] ?? 'No Address',
+latitude: lat,
+longitude: lon,
+);
+}).toList();
+} catch (e) {
+print('Overpass error: $e');
+return [];
+}
+}
 }

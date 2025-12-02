@@ -81,43 +81,35 @@ class ChecklistPage extends StatelessWidget {
 
   // Helper function to map requirement label to Overpass Tag
 // Helper function to map requirement label to Overpass Tag (REVISED)
-String _getQueryTagForLabel(String label) {
-  final lowerLabel = label.toLowerCase();
+List<String> _getQueryTagsForLabel(String label) {
+  final l = label.toLowerCase();
 
-  // --- LTO and Driving ---
-  if (lowerLabel.contains('lto') || lowerLabel.contains('permit') || lowerLabel.contains('license') || lowerLabel.contains('adl')) {
-    // 1. Tag for actual LTO offices (Use a simpler, more common tag)
-    // osm: office=government is common, but let's try a simpler amenity.
-    return 'amenity=government_office'; 
-  }
-  if (lowerLabel.contains('course') || lowerLabel.contains('practical') || lowerLabel.contains('tdc')) {
-    // 2. Tag for Driving Schools
-    return 'amenity=driving_school';
+  // LTO / ADL / Driver's License
+  if (l.contains('adl') || l.contains('lto') || l.contains('license') || l.contains('permit')) {
+    return ['office=government']; // LTO offices in PH
   }
 
-  // --- Health and Medical (This worked, keep it) ---
-  if (lowerLabel.contains('medical') || lowerLabel.contains('health')) {
-    return 'amenity=clinic';
-  }
-  if (lowerLabel.contains('hospital') || lowerLabel.contains('emergency')) {
-    return 'amenity=hospital';
+  // Driving Schools / Student Permit
+  if (l.contains('course') || l.contains('practical') || l.contains('tdc') || l.contains('student permit')) {
+    return ['amenity=driving_school'];
   }
 
-  // --- Government ID/General Admin ---
-  if (lowerLabel.contains('id') || lowerLabel.contains('clearance') || lowerLabel.contains('city hall') || lowerLabel.contains('government')) {
-    // Use a multi-tag approach for better chance of finding a result.
-    // NOTE: This will require changes to OverpassService (see section below)
-    return 'amenity=government_office or amenity=police'; 
-  }
-  
-  // --- Education ---
-  if (lowerLabel.contains('school') || lowerLabel.contains('transcript')) {
-    return 'amenity=school';
+  // Medical
+  if (l.contains('medical') || l.contains('health')) return ['amenity=clinic'];
+  if (l.contains('hospital') || l.contains('emergency')) return ['amenity=hospital'];
+
+  // Government ID / Clearance
+  if (l.contains('id') || l.contains('clearance') || l.contains('city hall') || l.contains('government')) {
+    return ['office=government', 'amenity=police'];
   }
 
-  // Fallback: If no match is found
-  return 'amenity=government_office'; 
+  // Education
+  if (l.contains('school') || l.contains('transcript')) return ['amenity=school'];
+
+  // Fallback
+  return ['office=government'];
 }
+
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +194,7 @@ String _getQueryTagForLabel(String label) {
                             // You will need to map requirement names to specific OSM tags.
                             // Example: If label contains 'Medical' or 'Certificate', use 'amenity=clinic'.
                             // This mapping is crucial for accurate results.
-                            String queryTag = _getQueryTagForLabel(item.label); 
+                            
 
                             // Show a loading indicator while fetching
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -212,12 +204,13 @@ String _getQueryTagForLabel(String label) {
                               ),
                             );
 
-                            final locations = await overpassService
-                                .getNearbyOffices(
+                            final tags = _getQueryTagsForLabel(item.label);
+
+                            final locations = await overpassService.getNearbyOffices(
                               userLat: userLatitude,
                               userLon: userLongitude,
                               radiusInMeters: searchRadius,
-                              queryTag: queryTag,
+                              tags: tags,
                             );
 
                             // Display the results in a modal
