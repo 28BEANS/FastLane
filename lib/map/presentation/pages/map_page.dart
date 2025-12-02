@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 import '../../data/office_location.dart';
 
@@ -38,14 +40,92 @@ class _MapPageState extends State<MapPage> {
     return LatLng(pos.latitude, pos.longitude);
   }
 
+  /// Reverse-geocode using OSM Nominatim
+  Future<Map<String, dynamic>?> fetchPlaceDetails(LatLng coord) async {
+    final url = Uri.parse(
+      "https://nominatim.openstreetmap.org/reverse"
+      "?lat=${coord.latitude}&lon=${coord.longitude}"
+      "&format=json&addressdetails=1"
+    );
+
+    final res = await http.get(url, headers: {"User-Agent": "your_app_name"});
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
+
+  /// Format OSM address JSON to human-readable string
+  String formatAddress(Map<String, dynamic> address) {
+    final fields = [
+      "office",
+      "road",
+      "quarter",
+      "village",
+      "city",
+      "region",
+      "postcode",
+      "country",
+    ];
+
+    List<String> parts = [];
+    for (var field in fields) {
+      if (address[field] != null && address[field].toString().isNotEmpty) {
+        parts.add(address[field]);
+      }
+    }
+    return parts.join(", "); // or use "\n" for multi-line
+  }
+
+  /// Display bottom sheet with place details
+  void showPlaceDetails(BuildContext context, Map<String, dynamic> data) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.4,
+          minChildSize: 0.25,
+          maxChildSize: 0.9,
+          builder: (_, controller) {
+            return ListView(
+              controller: controller,
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  data["display_name"] ?? "Unknown place",
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+
+                if (data["type"] != null)
+                  Text("Type: ${data["type"]}"),
+
+                if (data["address"] != null) ...[
+                  const SizedBox(height: 12),
+                  const Text("Address:", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(formatAddress(Map<String, dynamic>.from(data["address"]))),
+                ],
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final center = LatLng(widget.location.latitude, widget.location.longitude);
 
-    // Philippines bounding box (approx)
+    // Philippines bounding box
     final philippinesBounds = LatLngBounds(
-      const LatLng(4.225, 116.87),  // Southwest boundary
-      const LatLng(21.32, 126.60),  // Northeast boundary
+      const LatLng(4.225, 116.87),
+      const LatLng(21.32, 126.60),
     );
 
     return Scaffold(
@@ -59,37 +139,40 @@ class _MapPageState extends State<MapPage> {
               initialZoom: 15,
               minZoom: 4,
               maxZoom: 19,
-
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-
-              // Restrict map to Philippines
-              cameraConstraint: CameraConstraint.contain(
-                bounds: philippinesBounds,
-              ),
+              interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+              cameraConstraint: CameraConstraint.contain(bounds: philippinesBounds),
             ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.your_app_name',
               ),
-
               MarkerLayer(
                 markers: [
                   Marker(
                     width: 80,
                     height: 80,
                     point: center,
-                    child: const Icon(Icons.location_pin,
-                        color: Colors.red, size: 40),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final data = await fetchPlaceDetails(center);
+                        if (data != null && mounted) {
+                          showPlaceDetails(context, data);
+                        }
+                      },
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
 
-          // ---- ZOOM IN BUTTON ----
+          // ---- ZOOM IN ----
           Positioned(
             bottom: 110,
             right: 10,
@@ -104,7 +187,7 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // ---- ZOOM OUT BUTTON ----
+          // ---- ZOOM OUT ----
           Positioned(
             bottom: 60,
             right: 10,
@@ -119,7 +202,7 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // ---- CENTER ON USER LOCATION ----
+          // ---- GPS BUTTON ----
           Positioned(
             bottom: 160,
             right: 10,
@@ -136,7 +219,7 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
 
-          // ---- COMPASS RESET (RESET ROTATION) ----
+          // ---- COMPASS RESET ----
           Positioned(
             bottom: 10,
             right: 10,
@@ -144,7 +227,7 @@ class _MapPageState extends State<MapPage> {
               heroTag: "compass_reset",
               mini: true,
               onPressed: () {
-                _mapController.rotate(0); // reset rotation to normal north-up
+                _mapController.rotate(0);
               },
               child: const Icon(Icons.explore),
             ),
