@@ -27,7 +27,7 @@ FastLane is a Flutter application designed to streamline the process of dealing 
 
 ## Overview
 
-The Chatbot module provides a context-aware conversational agent (named Juan) designed to assist users with Philippine government document processes. Rather than just returning basic document intents and requirements, the chatbot employs **Retrieval-Augmented Generation (RAG)** to provide detailed, accurate, and context-rich answers about fees, application steps, eligibility criteria, and more.
+The Chatbot module provides a context-aware conversational agent designed to assist users with Philippine government document processes. Rather than just returning basic document intents and requirements, the chatbot employs **Retrieval-Augmented Generation (RAG)** to provide detailed, accurate, and context-rich answers about fees, application steps, eligibility criteria, and more.
 
 It relies on **Firebase Firestore** for its knowledge base, the **Google Generative AI (Gemini 2.5 Flash)** model for reasoning/generation, and the **Gemini Embedding Model (gemini-embedding-001)** for semantic retrieval.
 
