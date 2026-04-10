@@ -4,6 +4,11 @@ enum DocumentType {
   DriverLicense,
   NationalID,
   SeniorCitizen,
-  SchoolID,
-  CertificateOfRegistration_SchoolID
+  PwdID,
+  NBIClearance,
+  PhilHealthID,
+  PostalID,
+  PoliceClearance,
+  UMID,
+  VoterID,
 }
