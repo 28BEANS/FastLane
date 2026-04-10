@@ -6,96 +6,88 @@ class LlmService {
 
   LlmService() {
     final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    _model = GenerativeModel(model: "gemini-2.5-flash", apiKey: apiKey);
+    // User requested gemini-2.5-flash for speed
+    _model = GenerativeModel(model: "gemini-2.0-flash", apiKey: apiKey);
   }
 
-  Future<String>  identifyUserIntent(availableDocuments, userMessage) async {
-
-    String jsonLog = '''
-    {
-      "availableDocuments": ${availableDocuments.map((doc) => '"$doc"').toList()},
-      "userMessage": "$userMessage"
-    }
-    ''';
-
-    print("[INFO] LlmService.identifyUserIntent Called with: \n$jsonLog");
-
+  Future<String> identifyUserIntent(List<String> availableDocuments, String userMessage) async {
     try {
+      final prompt = """
+        You are Juan, a government service assistant.
+        Task: Determine the user's intent and which single government document they need.
 
-      final data = await _model.generateContent([
+        Available documents: ${availableDocuments.join(', ')}
 
-        Content.text(
-            "You are Juan, a government service assistant.\n"
-                "Task: Determine the user's intent and which single government document they need.\n\n"
-                "Available documents: ${availableDocuments.join(', ')}\n\n"
-                "Rules:\n"
-                "1. Analyze the user's message.\n"
-                "2. If it clearly matches one document, return that document.\n"
-                "3. If it does NOT match any document, return null.\n"
-                "4. OUTPUT ONLY JSON in EXACTLY this format (nothing else):\n"
-                "{\n"
-                "  \"user_intent\": \"<DocumentName from the list OR null>\"\n"
-                "}\n"
-                "5. Do NOT include any text, Markdown, code blocks, explanations, or extra characters.\n"
-                "6. Do NOT include quotes around the JSON keys or values except as shown above.\n\n"
-                "If you are tempted to add extra text, ignore it. ONLY return the valid JSON object.\n\n"
-                "User request: $userMessage"
-        )
-      ]);
+        Rules:
+        1. Analyze the user's message.
+        2. If it clearly matches one document, return that document.
+        3. If it does NOT match any document, return null.
+        4. OUTPUT ONLY JSON in EXACTLY this format:
+        {
+          "user_intent": "<DocumentName from the list OR null>"
+        }
+        5. Do NOT include any text, Markdown, code blocks, or extra characters.
 
-      final String response = data.text ?? "Sorry, I couldn't process that.";
+        User request: $userMessage
+        """;
 
-      // For debugging
-      print("[INFO] LlmService.identifyUserIntent responds with $response");
-      return response;
-
-    } catch (e, stackTrace) {
+      final data = await _model.generateContent([Content.text(prompt)]);
+      return data.text ?? "null";
+    } catch (e) {
       print("[ERROR] Failed to identify user intent: $e");
-      print(stackTrace);
+      return "{\"user_intent\": null}";
+    }
+  }
+
+  Future<String> generateDocumentResponse(bool hasDocs, String intent, String document, String requirements) async {
+    try {
+      final prompt = hasDocs
+          ? "Based on the user's intent: \"$intent\", and the document they need: \"$document\", the required documents are: $requirements. Write a friendly answer listing these."
+          : "The document \"$document\" is not on the list. Write a friendly response saying this.";
+
+      final data = await _model.generateContent([Content.text(prompt)]);
+      return data.text ?? "Sorry, I couldn't process that.";
+    } catch (e) {
+      print("[ERROR] Failed to generate document response: $e");
       return "Sorry, an error occurred while processing your request.";
     }
-
   }
 
-  Future<String> generateDocumentResponse(hasDocs, intent, document, requirements) async {
-
-    String jsonLog = '''
-    {
-      "info": "LlmService.generateDocumentResponse called",
-      "intent": "$intent",
-      "requirements": "$requirements",
-      "document": "$document"
-    }
-    ''';
-
-    print("[INFO] LlmService.generateDocumentResponse called with: \n$jsonLog");
-
+  Future<String> generateRAGResponse(bool hasDocs, String intent, String document, String requirements, String ragContext) async {
     try {
-
       final prompt = hasDocs
           ? """
-            Based on the user's intent: "$intent", and the document they need: "$document",
-            the required documents are: $requirements.
-
-            Write a friendly answer listing these.
+            You are BINO, a helpful government service assistant.
+            
+            USER INTENT: $intent
+            TARGET DOCUMENT: $document
+            CORE REQUIREMENTS: $requirements
+            
+            ADDITIONAL KNOWLEDGE:
+            $ragContext
+            
+            TASK:
+            Provide a detailed and friendly response to the user. 
+            - Mention the requirements clearly.
+            - Use the "ADDITIONAL KNOWLEDGE" to provide extra details like fees, steps, office locations, or tips if relevant.
+            - Keep the tone helpful and professional.
             """
           : """
-            The document "$document" is not on the list.
-            Write a friendly response saying this.
+            The user is asking about $document ($intent), but we don't have that in our primary requirements list.
+            
+            ADDITIONAL KNOWLEDGE FOUND:
+            $ragContext
+            
+            TASK:
+            Use the "ADDITIONAL KNOWLEDGE" above to provide as much helpful information as possible about $document.
+            If no specific knowledge is found, politely explain that we don't have full info yet.
             """;
 
-      final data = await _model.generateContent([
-        Content.text(prompt)
-      ]);
-
-      final String response = data.text ?? "Sorry, I couldn't process that.";
-      return response;
-
-    } catch (e, stackTrace) {
-      print("[ERROR] Failed to generate document response: $e");
-      print(stackTrace);
-      return "Sorry, an error occurred while processing your request.";
+      final data = await _model.generateContent([Content.text(prompt)]);
+      return data.text ?? "Sorry, I couldn't process that.";
+    } catch (e) {
+      print("[ERROR] Failed to generate RAG response: $e");
+      return "Sorry, an error occurred while generating the detailed response.";
     }
   }
-
 }
