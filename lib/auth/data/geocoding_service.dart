@@ -3,9 +3,14 @@ import 'package:http/http.dart' as http;
 
 class GeocodingService {
   static Future<Map<String, double>?> getCoordinates(String address) async {
-    final url = Uri.parse(
-      "https://nominatim.openstreetmap.org/search"
-      "?q=$address&format=json&limit=1",
+    final url = Uri.https(
+      "nominatim.openstreetmap.org",
+      "/search",
+      {
+        "q": address,
+        "format": "json",
+        "limit": "1",
+      },
     );
 
     final response = await http.get(
