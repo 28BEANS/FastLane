@@ -8,6 +8,30 @@ enum AuthMode { login, register, forgotPassword }
 class AuthController extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
+  Map<String, dynamic>? _userProfile;
+  Map<String, dynamic>? get userProfile => _userProfile;
+
+  AuthController() {
+    if (isLoggedIn) {
+      fetchUserProfile();
+    }
+  }
+
+  Future<void> fetchUserProfile() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        final doc = await _authService.firestore.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          _userProfile = doc.data();
+          notifyListeners();
+        }
+      } catch (e) {
+        debugPrint("[ERROR] Failed to fetch user profile: $e");
+      }
+    }
+  }
+
   // Controllers
   final email = TextEditingController();
   final password = TextEditingController();
@@ -89,6 +113,7 @@ class AuthController extends ChangeNotifier {
       if (email.text.trim().isEmpty) return 'Please enter your email';
       if (password.text.trim().isEmpty) return 'Please enter your password';
       await _authService.signIn(email.text.trim(), password.text.trim());
+      await fetchUserProfile();
     } catch (e) {
       return e.toString();
     } finally {
@@ -176,6 +201,7 @@ class AuthController extends ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
       );
+      await fetchUserProfile();
     } catch (e) {
       return e.toString();
     } finally {
@@ -190,6 +216,7 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     try {
       await _authService.signOut();
+      _userProfile = null;
       notifyListeners();
     } catch (e) {
       debugPrint('Logout failed: $e');
