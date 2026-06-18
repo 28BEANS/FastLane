@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Utility to seed the Firestore `knowledge_base` collection with
@@ -10,7 +11,7 @@ class KnowledgeBaseSeeder {
 
   /// Seeds the `knowledge_base` collection with all knowledge chunks.
   Future<void> seed() async {
-    print('[INFO] KnowledgeBaseSeeder: Starting to seed knowledge base...');
+    debugPrint('[INFO] KnowledgeBaseSeeder: Starting to seed knowledge base...');
 
     final chunks = _buildAllChunks();
     final batch = _firestore.batch();
@@ -22,19 +23,19 @@ class KnowledgeBaseSeeder {
     }
 
     await batch.commit();
-    print('[INFO] KnowledgeBaseSeeder: Seeded ${chunks.length} knowledge chunks.');
+    debugPrint('[INFO] KnowledgeBaseSeeder: Seeded ${chunks.length} knowledge chunks.');
   }
 
   /// Clears all existing knowledge base documents before re-seeding.
   Future<void> clearAndSeed() async {
-    print('[INFO] KnowledgeBaseSeeder: Clearing existing knowledge base...');
+    debugPrint('[INFO] KnowledgeBaseSeeder: Clearing existing knowledge base...');
     final snapshot = await _firestore.collection('knowledge_base').get();
     final batch = _firestore.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
     }
     await batch.commit();
-    print('[INFO] KnowledgeBaseSeeder: Cleared ${snapshot.docs.length} documents.');
+    debugPrint('[INFO] KnowledgeBaseSeeder: Cleared ${snapshot.docs.length} documents.');
     await seed();
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -18,7 +19,7 @@ class EmbeddingService {
       final result = await _model.embedContent(Content.text(text));
       return result.embedding.values;
     } catch (e) {
-      print('[ERROR] EmbeddingService.embedText: $e');
+      debugPrint('[ERROR] EmbeddingService.embedText: $e');
       rethrow;
     }
   }
@@ -27,7 +28,7 @@ class EmbeddingService {
   /// Returns a list of vectors in the same order as the input texts.
   /// Each text is embedded individually to avoid API batch limits.
   Future<List<List<double>>> embedBatch(List<String> texts) async {
-    print('[INFO] EmbeddingService.embedBatch: Embedding ${texts.length} texts...');
+    debugPrint('[INFO] EmbeddingService.embedBatch: Embedding ${texts.length} texts...');
     final List<List<double>> embeddings = [];
 
     for (int i = 0; i < texts.length; i++) {
@@ -36,7 +37,7 @@ class EmbeddingService {
 
       // Progress logging every 10 chunks
       if ((i + 1) % 10 == 0 || i == texts.length - 1) {
-        print('[INFO] EmbeddingService.embedBatch: ${i + 1}/${texts.length} done');
+        debugPrint('[INFO] EmbeddingService.embedBatch: ${i + 1}/${texts.length} done');
       }
     }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'models/knowledge_chunk.dart';
 import 'embedding_service.dart';
@@ -31,13 +32,13 @@ class VectorStore {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    print('[INFO] VectorStore.initialize: Starting initialization...');
+    debugPrint('[INFO] VectorStore.initialize: Starting initialization...');
 
     // 1. Fetch all knowledge chunks from Firestore
     _chunks = await _knowledgeBaseService.fetchAllChunks();
 
     if (_chunks.isEmpty) {
-      print('[WARN] VectorStore.initialize: No knowledge chunks found in Firestore!');
+      debugPrint('[WARN] VectorStore.initialize: No knowledge chunks found in Firestore!');
       return;
     }
 
@@ -51,7 +52,7 @@ class VectorStore {
     }
 
     _isInitialized = true;
-    print('[INFO] VectorStore.initialize: Ready with ${_chunks.length} embedded chunks.');
+    debugPrint('[INFO] VectorStore.initialize: Ready with ${_chunks.length} embedded chunks.');
   }
 
   /// Search for the top-K most similar knowledge chunks to the given query.
@@ -63,7 +64,7 @@ class VectorStore {
     String? documentType,
   }) async {
     if (!_isInitialized || _chunks.isEmpty) {
-      print('[WARN] VectorStore.search: Not initialized or empty.');
+      debugPrint('[WARN] VectorStore.search: Not initialized or empty.');
       return [];
     }
 
@@ -93,7 +94,7 @@ class VectorStore {
 
     // Debug logging
     for (final r in results) {
-      print('[INFO] VectorStore.search: ${r.chunk.title} (score: ${r.score.toStringAsFixed(4)})');
+      debugPrint('[INFO] VectorStore.search: ${r.chunk.title} (score: ${r.score.toStringAsFixed(4)})');
     }
 
     return results.map((r) => r.chunk).toList();
