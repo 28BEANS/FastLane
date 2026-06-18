@@ -3,6 +3,7 @@ import '../utils/json_convert.dart';
 import '../../data/chatbot_service.dart';
 import 'package:fast_lane/core/constants/document_constants.dart';
 import '../../data/llm_service.dart';
+import '../../data/local_intent_matcher.dart';
 import '../../../checklist/presentation/controllers/checklist_controller.dart';
 
 class ChatbotController with ChangeNotifier {
@@ -14,6 +15,9 @@ class ChatbotController with ChangeNotifier {
   late ChecklistController checklistController;
 
   String? lastSuggestedTaskName;
+
+  // Track whether the last response was generated offline
+  bool isOfflineMode = false;
 
   ChatbotController({required this.checklistController}) {
     _llm = LlmService();
@@ -27,32 +31,71 @@ class ChatbotController with ChangeNotifier {
   Future<void> sendMessage(String userMessage) async {
     if (userMessage.trim().isEmpty) return;
 
-    messages.insert(0, {"role": "user", "text": userMessage});
+    messages.insert(0, {'role': 'user', 'text': userMessage});
     notifyListeners();
 
     try {
-      final userIntent = await _llm.identifyUserIntent(availableDocuments, userMessage);
-      final request = parseLLMResponse(userIntent);
+      // Step 1: Identify intent — tries Gemini, falls back to local matcher
+      final result = await _llm.identifyUserIntent(availableDocuments, userMessage);
+      isOfflineMode = result.isOffline;
 
-      // Save document name as task name
-      lastSuggestedTaskName = request.documents;
+      List<String> documentRequirements = [];
+      String? documentName;
 
-      final documentRequirements = await fetchDocumentRequirements(request.documents);
-      lastSuggestedRequirements = documentRequirements;
-      notifyListeners();
+      if (result.isOffline && result.matchedDocument != null) {
+        // ── Fully offline path ─────────────────────────────────────────────
+        documentName = result.matchedDocument;
+        documentRequirements = LocalIntentMatcher.getOfflineRequirements(documentName!);
+        lastSuggestedTaskName = documentName;
+        lastSuggestedRequirements = documentRequirements;
+        notifyListeners();
 
-      final hasDocs = documentRequirements.isNotEmpty;
+        final offlineReply = LocalIntentMatcher.buildOfflineResponse(
+          documentName: documentName,
+          requirements: documentRequirements,
+        );
 
-      final documentResponse = await _llm.generateDocumentResponse(
-          hasDocs,
-          request.intent,
-          request.documents,
-          documentRequirements.join(", ")
-      );
+        messages.insert(0, {
+          'role': 'bot',
+          'text': offlineReply,
+          'offline': 'true',
+        });
+      } else if (result.isOffline && result.matchedDocument == null) {
+        // ── Offline, no match ──────────────────────────────────────────────
+        messages.insert(0, {
+          'role': 'bot',
+          'text': "⚠️ I'm currently offline and couldn't identify the document you're asking about. "
+              "Please check your internet connection and try again, or describe the document more specifically.",
+          'offline': 'true',
+        });
+      } else {
+        // ── Online path — parse Gemini JSON ───────────────────────────────
+        final request = parseLLMResponse(result.rawJson);
+        documentName = request.documents;
+        lastSuggestedTaskName = documentName;
 
-      messages.insert(0, {"role": "bot", "text": documentResponse});
+        // Fetch from Firestore (cached after first call)
+        documentRequirements = await fetchDocumentRequirements(documentName);
+        lastSuggestedRequirements = documentRequirements;
+        notifyListeners();
+
+        final hasDocs = documentRequirements.isNotEmpty;
+        final documentResponse = await _llm.generateDocumentResponse(
+          hasDocs: hasDocs,
+          intent: request.intent,
+          document: documentName,
+          requirements: documentRequirements,
+          isOffline: false,
+        );
+
+        messages.insert(0, {'role': 'bot', 'text': documentResponse});
+      }
     } catch (e) {
-      messages.insert(0, {"role": "bot", "text": "Error: $e"});
+      debugPrint('[ChatbotController] sendMessage error: $e');
+      messages.insert(0, {
+        'role': 'bot',
+        'text': '❌ Something went wrong. Please try again.',
+      });
     }
 
     notifyListeners();
