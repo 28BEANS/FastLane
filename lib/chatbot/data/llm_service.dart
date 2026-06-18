@@ -11,7 +11,7 @@ class LlmService {
   late final GenerativeModel _model;
 
   // Use gemini-1.5-flash — broader free-tier quota than 2.5-flash
-  static const String _modelName = 'gemini-1.5-flash';
+  static const String _modelName = 'gemini-2.0-flash';
 
   // Retry configuration
   static const int _maxRetries = 2;
