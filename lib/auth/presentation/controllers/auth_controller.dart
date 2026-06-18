@@ -53,6 +53,15 @@ class AuthController extends ChangeNotifier {
   String? _selectedCountryCode;
   double? latitude;
   double? longitude;
+  String userName = 'User';
+  String userEmail = '';
+
+  AuthController() {
+    // Attempt to load user if already logged in via Firebase
+    if (isLoggedIn) {
+      fetchUserProfile();
+    }
+  }
 
   // ------------------------------------------------------------------
   // Visibility Toggle
@@ -225,12 +234,38 @@ class AuthController extends ChangeNotifier {
 
   // ---------------- Geocoding ----------------
   Future<bool> resolveCoordinates() async {
-    final fullAddress =
-        "${street.text}, ${city.text}, ${region.text}, ${postalCode.text}, ${country.text}";
-    final coords = await GeocodingService.getCoordinates(fullAddress);
-    if (coords == null) return false;
-    latitude = coords['lat'];
-    longitude = coords['lng'];
-    return true;
+    final addresses = [
+      "${street.text}, ${city.text}, ${region.text}, ${country.text}",
+      "${city.text}, ${region.text}, ${country.text}",
+      "${city.text}, Philippines",
+    ];
+
+    for (final address in addresses) {
+      debugPrint('[GEOCODING] Trying: $address');
+      final coords = await GeocodingService.getCoordinates(address);
+      if (coords != null) {
+        latitude = coords['lat'];
+        longitude = coords['lng']; // ← was 'longitude', must match your service
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------------- Profile Fetching ----------------
+  Future<void> fetchUserProfile() async {
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        userEmail = user.email ?? '';
+        final profile = await _authService.getUserProfile(user.uid);
+        if (profile != null) {
+          userName = "${profile['firstName']} ${profile['lastName']}";
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+    }
   }
 }

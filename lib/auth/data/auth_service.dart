@@ -54,4 +54,9 @@ class AuthService {
 
   Future<void> resetPassword({required String email}) async =>
       await firebaseAuth.sendPasswordResetEmail(email: email);
+
+  Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    final doc = await firestore.collection('users').doc(uid).get();
+    return doc.data();
+  }
 }
