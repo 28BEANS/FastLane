@@ -6,6 +6,7 @@ import '../../core/widgets/header.dart';
 import '../../home/presentation/pages/home_page.dart';
 import '../../chatbot/presentation/pages/chatbot_page.dart';
 import '../../checklist/presentation/pages/checklist_page.dart';
+import '../../map/presentation/pages/map_page.dart';
 
 class MainShellPage extends StatelessWidget {
   const MainShellPage({super.key});
@@ -27,7 +28,7 @@ class _MainShellView extends StatelessWidget {
       const HomePage(),                       // stateless, can be const
       ChecklistPage(),                  // depends on provider, must NOT be const
       ChatbotPage(),                           // depends on provider, must NOT be const
-      const Scaffold(body: Center(child: Text("Maps"))),      // static
+      const MapPage(location: null),          // interactive map page
     ];
 
     return Scaffold(
