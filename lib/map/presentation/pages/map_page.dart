@@ -4,13 +4,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import '../../data/office_location.dart';
+import '../../data/overpass_service.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 
 class MapPage extends StatefulWidget {
-  final OfficeLocation location;
+  final OfficeLocation? location;
 
-  const MapPage({super.key, required this.location});
+  const MapPage({super.key, this.location});
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -18,11 +21,38 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   late final MapController _mapController;
+  List<OfficeLocation> _nearbyOffices = [];
+  bool _loadingOffices = false;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+
+    // If no specific office is requested, load nearby offices around the user's location
+    if (widget.location == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final auth = context.read<AuthController>();
+        double lat = 14.5995;
+        double lng = 120.9842;
+        if (auth.userProfile != null) {
+          lat = (auth.userProfile!['lat'] as num?)?.toDouble() ?? lat;
+          lng = (auth.userProfile!['lng'] as num?)?.toDouble() ?? lng;
+        }
+
+        // Try getting live position first, fall back to registered coords
+        LatLng startPos = LatLng(lat, lng);
+        try {
+          final livePos = await _getUserLocation();
+          if (livePos != null) {
+            startPos = livePos;
+            _mapController.move(livePos, 15);
+          }
+        } catch (_) {}
+
+        _fetchNearbyGovernmentOffices(startPos);
+      });
+    }
   }
 
   /// Request GPS permission and return user location
@@ -40,15 +70,47 @@ class _MapPageState extends State<MapPage> {
     return LatLng(pos.latitude, pos.longitude);
   }
 
+  Future<void> _fetchNearbyGovernmentOffices(LatLng center) async {
+    if (_loadingOffices) return;
+    setState(() => _loadingOffices = true);
+
+    try {
+      final overpass = OverpassService();
+      // Query government offices within 5000 meters
+      final offices = await overpass.getNearbyOffices(
+        userLat: center.latitude,
+        userLon: center.longitude,
+        radiusInMeters: 5000,
+        tags: ['office=government', 'amenity=townhall', 'amenity=police'],
+      );
+      if (mounted) {
+        setState(() {
+          _nearbyOffices = offices;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching nearby government offices: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _loadingOffices = false);
+      }
+    }
+  }
+
   /// Reverse-geocode using OSM Nominatim
   Future<Map<String, dynamic>?> fetchPlaceDetails(LatLng coord) async {
-    final url = Uri.parse(
-      "https://nominatim.openstreetmap.org/reverse"
-      "?lat=${coord.latitude}&lon=${coord.longitude}"
-      "&format=json&addressdetails=1"
+    final url = Uri.https(
+      "nominatim.openstreetmap.org",
+      "/reverse",
+      {
+        "lat": coord.latitude.toString(),
+        "lon": coord.longitude.toString(),
+        "format": "json",
+        "addressdetails": "1",
+      },
     );
 
-    final res = await http.get(url, headers: {"User-Agent": "your_app_name"});
+    final res = await http.get(url, headers: {"User-Agent": "FastLaneApp/1.0 (support@fastlane.com)"});
     if (res.statusCode == 200) {
       return jsonDecode(res.body);
     }
@@ -74,7 +136,7 @@ class _MapPageState extends State<MapPage> {
         parts.add(address[field]);
       }
     }
-    return parts.join(", "); // or use "\n" for multi-line
+    return parts.join(", ");
   }
 
   /// Display bottom sheet with place details
@@ -120,7 +182,17 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    final center = LatLng(widget.location.latitude, widget.location.longitude);
+    final auth = context.watch<AuthController>();
+    double defaultLat = 14.5995;
+    double defaultLng = 120.9842;
+    if (auth.userProfile != null) {
+      defaultLat = (auth.userProfile!['lat'] as num?)?.toDouble() ?? defaultLat;
+      defaultLng = (auth.userProfile!['lng'] as num?)?.toDouble() ?? defaultLng;
+    }
+
+    final center = widget.location != null
+        ? LatLng(widget.location!.latitude, widget.location!.longitude)
+        : LatLng(defaultLat, defaultLng);
 
     // Philippines bounding box
     final philippinesBounds = LatLngBounds(
@@ -128,8 +200,90 @@ class _MapPageState extends State<MapPage> {
       const LatLng(21.32, 126.60),
     );
 
+    // Prepare markers
+    final markers = <Marker>[];
+    if (widget.location == null) {
+      // User location marker
+      markers.add(
+        Marker(
+          width: 50,
+          height: 50,
+          point: center,
+          child: const Icon(
+            Icons.my_location,
+            color: Colors.blue,
+            size: 30,
+          ),
+        ),
+      );
+
+      // Office markers
+      for (var office in _nearbyOffices) {
+        markers.add(
+          Marker(
+            width: 80,
+            height: 80,
+            point: LatLng(office.latitude, office.longitude),
+            child: GestureDetector(
+              onTap: () async {
+                final data = await fetchPlaceDetails(LatLng(office.latitude, office.longitude));
+                if (data != null && mounted) {
+                  showPlaceDetails(context, data);
+                }
+              },
+              child: const Icon(
+                Icons.location_on,
+                color: Colors.red,
+                size: 36,
+              ),
+            ),
+          ),
+        );
+      }
+    } else {
+      // Single specific office marker
+      markers.add(
+        Marker(
+          width: 80,
+          height: 80,
+          point: center,
+          child: GestureDetector(
+            onTap: () async {
+              final data = await fetchPlaceDetails(center);
+              if (data != null && mounted) {
+                showPlaceDetails(context, data);
+              }
+            },
+            child: const Icon(
+              Icons.location_pin,
+              color: Colors.red,
+              size: 40,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final titleText = widget.location != null ? widget.location!.name : "Nearby Government Offices";
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.location.name)),
+      appBar: AppBar(
+        title: Text(titleText),
+        actions: _loadingOffices
+            ? [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.blue, strokeWidth: 2),
+                    ),
+                  ),
+                )
+              ]
+            : null,
+      ),
       body: Stack(
         children: [
           FlutterMap(
@@ -147,28 +301,7 @@ class _MapPageState extends State<MapPage> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.your_app_name',
               ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    width: 80,
-                    height: 80,
-                    point: center,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final data = await fetchPlaceDetails(center);
-                        if (data != null && mounted) {
-                          showPlaceDetails(context, data);
-                        }
-                      },
-                      child: const Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              MarkerLayer(markers: markers),
             ],
           ),
 
@@ -213,6 +346,9 @@ class _MapPageState extends State<MapPage> {
                 final userPos = await _getUserLocation();
                 if (userPos != null) {
                   _mapController.move(userPos, 17);
+                  if (widget.location == null) {
+                    _fetchNearbyGovernmentOffices(userPos);
+                  }
                 }
               },
               child: const Icon(Icons.my_location),
