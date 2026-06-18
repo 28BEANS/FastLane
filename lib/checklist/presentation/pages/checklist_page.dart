@@ -1,15 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../controllers/checklist_controller.dart';
 
-import '../../../map/data/overpass_service.dart'; // NEW import
-import '../../../map/data/office_location.dart'; // NEW import
-import '../../../map/presentation/pages/map_page.dart'; // NEW import
+import '../../../map/data/overpass_service.dart';
+import '../../../map/data/office_location.dart';
+import '../../../map/presentation/pages/map_page.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 
-class ChecklistPage extends StatelessWidget {
+class ChecklistPage extends StatefulWidget {
   const ChecklistPage({super.key});
 
-  // NEW method to show the results modal
+  @override
+  State<ChecklistPage> createState() => _ChecklistPageState();
+}
+
+class _ChecklistPageState extends State<ChecklistPage> {
+  LatLng? _deviceLocation;
+
+  // Request GPS permission and fetch user location
+  Future<LatLng?> _getUserLocation() async {
+    if (_deviceLocation != null) return _deviceLocation;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return null;
+      }
+
+      Position pos = await Geolocator.getCurrentPosition();
+      _deviceLocation = LatLng(pos.latitude, pos.longitude);
+      return _deviceLocation;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Show the results modal
   void _showOfficeLocationsModal(
     BuildContext context,
     String requirementLabel,
@@ -79,46 +110,39 @@ class ChecklistPage extends StatelessWidget {
     );
   }
 
-  // Helper function to map requirement label to Overpass Tag
-// Helper function to map requirement label to Overpass Tag (REVISED)
-List<String> _getQueryTagsForLabel(String label) {
-  final l = label.toLowerCase();
+  // Helper function to map requirement label to Overpass Tag (REVISED)
+  List<String> _getQueryTagsForLabel(String label) {
+    final l = label.toLowerCase();
 
-  // LTO / ADL / Driver's License
-  if (l.contains('adl') || l.contains('lto') || l.contains('license') || l.contains('permit')) {
-    return ['office=government']; // LTO offices in PH
+    // LTO / ADL / Driver's License
+    if (l.contains('adl') || l.contains('lto') || l.contains('license') || l.contains('permit')) {
+      return ['office=government']; // LTO offices in PH
+    }
+
+    // Driving Schools / Student Permit
+    if (l.contains('course') || l.contains('practical') || l.contains('tdc') || l.contains('student permit')) {
+      return ['amenity=driving_school'];
+    }
+
+    // Medical
+    if (l.contains('medical') || l.contains('health')) return ['amenity=clinic'];
+    if (l.contains('hospital') || l.contains('emergency')) return ['amenity=hospital'];
+
+    // Government ID / Clearance
+    if (l.contains('id') || l.contains('clearance') || l.contains('city hall') || l.contains('government')) {
+      return ['office=government', 'amenity=police'];
+    }
+
+    // Education
+    if (l.contains('school') || l.contains('transcript')) return ['amenity=school'];
+
+    // Fallback
+    return ['office=government'];
   }
-
-  // Driving Schools / Student Permit
-  if (l.contains('course') || l.contains('practical') || l.contains('tdc') || l.contains('student permit')) {
-    return ['amenity=driving_school'];
-  }
-
-  // Medical
-  if (l.contains('medical') || l.contains('health')) return ['amenity=clinic'];
-  if (l.contains('hospital') || l.contains('emergency')) return ['amenity=hospital'];
-
-  // Government ID / Clearance
-  if (l.contains('id') || l.contains('clearance') || l.contains('city hall') || l.contains('government')) {
-    return ['office=government', 'amenity=police'];
-  }
-
-  // Education
-  if (l.contains('school') || l.contains('transcript')) return ['amenity=school'];
-
-  // Fallback
-  return ['office=government'];
-}
-
 
   @override
   Widget build(BuildContext context) {
-    // --- PLACEHOLDER DATA: REPLACE WITH ACTUAL USER DATA ---
-    const double userLatitude = 15.1373919; // Example: Manila
-    const double userLongitude = 120.5903763;
-    const double searchRadius = 5000; 
-    // --- END PLACEHOLDER DATA ---
-
+    const double searchRadius = 5000;
     final overpassService = OverpassService(); // Initialize service
 
     return Consumer<ChecklistController>(
@@ -130,7 +154,7 @@ List<String> _getQueryTagsForLabel(String label) {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
           itemCount: tasks.length,
           itemBuilder: (context, index) {
             final task = tasks[index];
@@ -139,7 +163,6 @@ List<String> _getQueryTagsForLabel(String label) {
             return Card(
               margin: const EdgeInsets.only(bottom: 16),
               child: ExpansionTile(
-                // ... (title remains the same)
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -165,7 +188,6 @@ List<String> _getQueryTagsForLabel(String label) {
                     ),
                   ],
                 ),
-                // ... (children mapping logic)
                 children: task.items.map((item) {
                   return ListTile(
                     leading: Container(
@@ -183,20 +205,12 @@ List<String> _getQueryTagsForLabel(String label) {
                           : null,
                     ),
                     title: Text(item.label),
-                    // NEW: Trailing logic is now a Row containing the button and the original action button
                     trailing: Row(
-                      mainAxisSize: MainAxisSize.min, // Essential for Row in trailing
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // --- NEW: "Where to get button" ---
+                        // --- "Where to get button" ---
                         ElevatedButton.icon(
                           onPressed: () async {
-                            // Determine the Overpass tag based on the requirement label.
-                            // You will need to map requirement names to specific OSM tags.
-                            // Example: If label contains 'Medical' or 'Certificate', use 'amenity=clinic'.
-                            // This mapping is crucial for accurate results.
-                            
-
-                            // Show a loading indicator while fetching
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Searching for nearby offices...'),
@@ -206,19 +220,37 @@ List<String> _getQueryTagsForLabel(String label) {
 
                             final tags = _getQueryTagsForLabel(item.label);
 
+                            // Resolve user location dynamically:
+                            // 1. Try GPS location
+                            // 2. Try registered Firestore address coords
+                            // 3. Fall back to Manila coordinates
+                            final auth = context.read<AuthController>();
+                            double userLat = 15.1373919;
+                            double userLon = 120.5903763;
+
+                            final gpsCoords = await _getUserLocation();
+                            if (gpsCoords != null) {
+                              userLat = gpsCoords.latitude;
+                              userLon = gpsCoords.longitude;
+                            } else if (auth.userProfile != null) {
+                              userLat = (auth.userProfile!['lat'] as num?)?.toDouble() ?? userLat;
+                              userLon = (auth.userProfile!['lng'] as num?)?.toDouble() ?? userLon;
+                            }
+
                             final locations = await overpassService.getNearbyOffices(
-                              userLat: userLatitude,
-                              userLon: userLongitude,
+                              userLat: userLat,
+                              userLon: userLon,
                               radiusInMeters: searchRadius,
                               tags: tags,
                             );
 
-                            // Display the results in a modal
-                            _showOfficeLocationsModal(
-                              context,
-                              item.label,
-                              locations,
-                            );
+                            if (context.mounted) {
+                              _showOfficeLocationsModal(
+                                context,
+                                item.label,
+                                locations,
+                              );
+                            }
                           },
                           icon: const Icon(Icons.location_on, size: 18),
                           label: const Text("Offices"),
@@ -227,8 +259,7 @@ List<String> _getQueryTagsForLabel(String label) {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           ),
                         ),
-                        const SizedBox(width: 8), // Spacer
-                        // --- END NEW Button ---
+                        const SizedBox(width: 8),
                         
                         // Original "Done"/"Undone" button logic
                         item.done
@@ -237,7 +268,6 @@ List<String> _getQueryTagsForLabel(String label) {
                                   backgroundColor: Colors.orange,
                                 ),
                                 onPressed: () async {
-                                  // ... (existing undone confirmation dialog)
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (_) => AlertDialog(
@@ -270,7 +300,6 @@ List<String> _getQueryTagsForLabel(String label) {
                                   backgroundColor: Colors.blue,
                                 ),
                                 onPressed: () async {
-                                  // ... (existing done confirmation dialog)
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (_) => AlertDialog(
