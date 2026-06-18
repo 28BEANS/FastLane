@@ -85,7 +85,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
             ),
 
           Padding(
-            padding: const EdgeInsets.only(bottom: 150),
+            padding: const EdgeInsets.only(bottom: 95, left: 16, right: 16),
             child: TextFormField(
               controller: _textController,
               onFieldSubmitted: (value) {
@@ -94,7 +94,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
               },
               decoration: InputDecoration(
                 hintText: 'Press here to talk with BINO',
-                contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 50),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24),
                 filled: true,
                 fillColor: const Color(0xFFF4F4F4),
                 suffixIcon: IconButton(
@@ -104,12 +104,17 @@ class _ChatbotPageState extends State<ChatbotPage> {
                     _textController.clear();
                   },
                 ),
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20.0),
-                    topRight: Radius.circular(20.0),
-                  ),
-                  borderSide: BorderSide(color: Color(0xFF919191), width: 2.0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: const BorderSide(color: Color(0xFF919191), width: 1.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: const BorderSide(color: Colors.blue, width: 2.0),
                 ),
               ),
             ),
