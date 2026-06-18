@@ -307,7 +307,7 @@ class _MapPageState extends State<MapPage> {
 
           // ---- ZOOM IN ----
           Positioned(
-            bottom: 110,
+            bottom: 200,
             right: 10,
             child: FloatingActionButton(
               heroTag: "zoom_in",
@@ -322,7 +322,7 @@ class _MapPageState extends State<MapPage> {
 
           // ---- ZOOM OUT ----
           Positioned(
-            bottom: 60,
+            bottom: 150,
             right: 10,
             child: FloatingActionButton(
               heroTag: "zoom_out",
@@ -337,7 +337,7 @@ class _MapPageState extends State<MapPage> {
 
           // ---- GPS BUTTON ----
           Positioned(
-            bottom: 160,
+            bottom: 250,
             right: 10,
             child: FloatingActionButton(
               heroTag: "gps",
@@ -357,7 +357,7 @@ class _MapPageState extends State<MapPage> {
 
           // ---- COMPASS RESET ----
           Positioned(
-            bottom: 10,
+            bottom: 100,
             right: 10,
             child: FloatingActionButton(
               heroTag: "compass_reset",
