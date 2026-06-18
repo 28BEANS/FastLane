@@ -117,6 +117,15 @@ class _MapPageState extends State<MapPage> {
     return null;
   }
 
+  /// Fetch place details for an office marker and show bottom sheet
+  Future<void> _onOfficeMarkerTapped(LatLng coord) async {
+    final data = await fetchPlaceDetails(coord);
+    if (!mounted) return;
+    if (data != null) {
+      showPlaceDetails(context, data);
+    }
+  }
+
   /// Format OSM address JSON to human-readable string
   String formatAddress(Map<String, dynamic> address) {
     final fields = [
@@ -225,12 +234,9 @@ class _MapPageState extends State<MapPage> {
             height: 80,
             point: LatLng(office.latitude, office.longitude),
             child: GestureDetector(
-              onTap: () async {
-                final data = await fetchPlaceDetails(LatLng(office.latitude, office.longitude));
-                if (data != null && mounted) {
-                  showPlaceDetails(context, data);
-                }
-              },
+              onTap: () => _onOfficeMarkerTapped(
+                LatLng(office.latitude, office.longitude),
+              ),
               child: const Icon(
                 Icons.location_on,
                 color: Colors.red,
@@ -248,12 +254,7 @@ class _MapPageState extends State<MapPage> {
           height: 80,
           point: center,
           child: GestureDetector(
-            onTap: () async {
-              final data = await fetchPlaceDetails(center);
-              if (data != null && mounted) {
-                showPlaceDetails(context, data);
-              }
-            },
+            onTap: () => _onOfficeMarkerTapped(center),
             child: const Icon(
               Icons.location_pin,
               color: Colors.red,

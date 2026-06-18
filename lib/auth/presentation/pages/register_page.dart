@@ -22,7 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthController>(
-      builder: (_, c, __) => Scaffold(
+      builder: (_, c, child) => Scaffold(
         appBar: AppBar(title: const Text('Register')),
         body: Padding(
           padding: const EdgeInsets.all(24.0),

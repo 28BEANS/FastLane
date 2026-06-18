@@ -17,7 +17,7 @@ class _RegisterAddressPageState extends State<RegisterAddressPage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthController>(
-      builder: (_, c, __) => Scaffold(
+      builder: (_, c, child) => Scaffold(
         appBar: AppBar(title: const Text('Address Information')),
         body: Padding(
           padding: const EdgeInsets.all(24),
@@ -83,14 +83,13 @@ class _RegisterAddressPageState extends State<RegisterAddressPage> {
                         ? null
                         : () async {
                             final err = await c.submitRegistration();
+                            if (!context.mounted) return;
                             if (err != null) {
                               ScaffoldMessenger.of(context)
                                   .showSnackBar(SnackBar(content: Text(err)));
                               return;
                             }
-                            if (context.mounted) {
-                              Navigator.pushReplacementNamed(context, '/dashboard');
-                            }
+                            Navigator.pushReplacementNamed(context, '/dashboard');
                           },
                     child: c.loading
                         ? const CircularProgressIndicator(color: Colors.white)

@@ -22,7 +22,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthController>(
-      builder: (_, c, __) => Scaffold(
+      builder: (_, c, child) => Scaffold(
         appBar: AppBar(title: const Text('Forgot Password')),
         body: Center(
           child: Padding(

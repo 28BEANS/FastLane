@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -16,7 +17,7 @@ class LlmService {
       "userMessage": userMessage,
     });
 
-    print("[INFO] LlmService.identifyUserIntent Called with: \n$jsonLog");
+    debugPrint("[INFO] LlmService.identifyUserIntent Called with: \n$jsonLog");
 
     try {
       final data = await _model.generateContent(
@@ -44,12 +45,12 @@ class LlmService {
       final String response = data.text ?? "{}";
 
       // For debugging
-      print("[INFO] LlmService.identifyUserIntent responds with $response");
+      debugPrint("[INFO] LlmService.identifyUserIntent responds with $response");
       return response;
 
     } catch (e, stackTrace) {
-      print("[ERROR] Failed to identify user intent: $e");
-      print(stackTrace);
+      debugPrint("[ERROR] Failed to identify user intent: $e");
+      debugPrint(stackTrace.toString());
       return "{}";
     }
   }
@@ -62,7 +63,7 @@ class LlmService {
       "document": document,
     });
 
-    print("[INFO] LlmService.generateDocumentResponse called with: \n$jsonLog");
+    debugPrint("[INFO] LlmService.generateDocumentResponse called with: \n$jsonLog");
 
     try {
       final prompt = hasDocs
@@ -85,8 +86,8 @@ class LlmService {
       return response;
 
     } catch (e, stackTrace) {
-      print("[ERROR] Failed to generate document response: $e");
-      print(stackTrace);
+      debugPrint("[ERROR] Failed to generate document response: $e");
+      debugPrint(stackTrace.toString());
       return "Sorry, an error occurred while processing your request.";
     }
   }

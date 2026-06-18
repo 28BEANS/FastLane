@@ -15,9 +15,8 @@ class ChatbotController with ChangeNotifier {
 
   String? lastSuggestedTaskName;
 
-  ChatbotController({required ChecklistController checklistController}) {
+  ChatbotController({required this.checklistController}) {
     _llm = LlmService();
-    this.checklistController = checklistController;
   }
 
   /// Update checklist controller reference (for ProxyProvider)

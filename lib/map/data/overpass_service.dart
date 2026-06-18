@@ -1,5 +1,6 @@
 // services/overpass_service.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'office_location.dart';
 
@@ -23,7 +24,7 @@ class OverpassService {
     final String cacheKey = "$roundedLat,$roundedLon,$radiusInMeters,${tags.join(',')}";
 
     if (_cache.containsKey(cacheKey)) {
-      print("[INFO] OverpassService: returning cached results for key: $cacheKey");
+      debugPrint("[INFO] OverpassService: returning cached results for key: $cacheKey");
       return _cache[cacheKey]!;
     }
 
@@ -75,7 +76,7 @@ class OverpassService {
       _cache[cacheKey] = officeLocations;
       return officeLocations;
     } catch (e) {
-      print('Overpass error: $e');
+      debugPrint('Overpass error: $e');
       return [];
     }
   }

@@ -25,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     // ACCESS GLOBAL CONTROLLER (Do not create a new one here)
     return Consumer<AuthController>(
-      builder: (_, c, __) => PopScope(
+      builder: (_, c, child) => PopScope(
         canPop: false, // Disables system back button
         child: Scaffold(
           appBar: AppBar(

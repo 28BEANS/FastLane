@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 // In-memory cache for document requirements to prevent redundant Firestore reads
 final Map<String, List<String>> _requirementsCache = {};
 
 Future<List<String>> fetchDocumentRequirements(String documentName) async {
   if (_requirementsCache.containsKey(documentName)) {
-    print("[INFO] chatbot_service: returning cached requirements for $documentName");
+    debugPrint("[INFO] chatbot_service: returning cached requirements for $documentName");
     return _requirementsCache[documentName]!;
   }
 
-  print("[INFO] chatbot_service.fetchDocumentRequirements called with $documentName");
+  debugPrint("[INFO] chatbot_service.fetchDocumentRequirements called with $documentName");
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   try {
@@ -34,7 +35,7 @@ Future<List<String>> fetchDocumentRequirements(String documentName) async {
     _requirementsCache[documentName] = requirements;
     return requirements;
   } catch (e) {
-    print('Error fetching document requirements: $e');
+    debugPrint('Error fetching document requirements: $e');
     return [];
   }
 }

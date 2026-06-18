@@ -1,9 +1,9 @@
 enum DocumentType {
-  BirthCert,
-  Passport,
-  DriverLicense,
-  NationalID,
-  SeniorCitizen,
-  SchoolID,
-  CertificateOfRegistration_SchoolID
+  birthCert,
+  passport,
+  driverLicense,
+  nationalID,
+  seniorCitizen,
+  schoolID,
+  certificateOfRegistration,
 }
